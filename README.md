@@ -29,4 +29,4 @@
 ## Phase 5 — Portail client (optionnel, plus tard)
 
 - Accès restreint pour qu'un client suive l'avancement de son projet
-  -Espace partagé de livrables/documents
+- Espace partagé de livrables/documents
