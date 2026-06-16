@@ -38,6 +38,7 @@ enum Role {
 
 model Client {
   id        String   @id @default(cuid())
+  slug      String   @unique
   name      String
   company   String?
   email     String?
