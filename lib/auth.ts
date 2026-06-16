@@ -9,14 +9,14 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
-  socialProviders: {
-    github: {
-      clientId: process.env.GITHUB_CLIENT_ID || "placeholder",
-      clientSecret: process.env.GITHUB_CLIENT_SECRET || "placeholder",
-    },
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID || "placeholder",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "placeholder",
-    },
-  },
+  // socialProviders: {
+  //   github: {
+  //     clientId: process.env.GITHUB_CLIENT_ID || "placeholder",
+  //     clientSecret: process.env.GITHUB_CLIENT_SECRET || "placeholder",
+  //   },
+  //   google: {
+  //     clientId: process.env.GOOGLE_CLIENT_ID || "placeholder",
+  //     clientSecret: process.env.GOOGLE_CLIENT_SECRET || "placeholder",
+  //   },
+  // },
 });
