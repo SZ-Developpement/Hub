@@ -19,4 +19,13 @@ export const auth = betterAuth({
   //     clientSecret: process.env.GOOGLE_CLIENT_SECRET || "placeholder",
   //   },
   // },
+  user: {
+    additionalFields: {
+      role: {
+        type: "string",
+        defaultValue: "MEMBER",
+        input: false, // empêche un user de définir son propre rôle à l'inscription
+      },
+    },
+  },
 });
