@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  BadgeCheck,
-  Bell,
-  ChevronsUpDown,
-  CreditCard,
-  LogOut,
-  Sparkles,
-} from "lucide-react";
+import { BadgeCheck, Bell, ChevronsUpDown, LogOut } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -26,6 +19,10 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
+import { authClient } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+
 export function NavUser({
   user,
 }: {
@@ -36,6 +33,28 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
+
+  const router = useRouter();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    await authClient.signOut({
+      fetchOptions: {
+        onRequest: () => {
+          setIsLoggingOut(true);
+        },
+        onSuccess: () => {
+          setIsLoggingOut(false);
+          router.push("/");
+          router.refresh();
+        },
+        onError: (ctx) => {
+          setIsLoggingOut(false);
+          console.error("Erreur lors de la déconnexion:", ctx.error);
+        },
+      },
+    });
+  };
 
   return (
     <SidebarMenu>
@@ -53,7 +72,7 @@ export function NavUser({
                     alt={user.name || "Utilisateur"}
                   />
                 ) : (
-                  <AvatarFallback className="rounded-lg bg-gray-300 text-white border border-border">
+                  <AvatarFallback className="rounded-lg bg-gray-300 text-black border border-border">
                     {user.name?.charAt(0) || "U"}
                   </AvatarFallback>
                 )}
@@ -84,12 +103,12 @@ export function NavUser({
                       alt={user.name || "Utilisateur"}
                     />
                   ) : (
-                    <AvatarFallback className="rounded-lg bg-gray-300 text-white border border-border">
+                    <AvatarFallback className="rounded-lg bg-gray-300 text-black border border-border">
                       {user.name?.charAt(0) || "U"}
                     </AvatarFallback>
                   )}
                 </Avatar>
-                <div className="grid flex-1 text-left text-sm leading-tight">
+                <div className="grid flex-1 text-black text-left text-sm leading-tight">
                   <span className="truncate font-medium">
                     {user.name || "Utilisateur"}
                   </span>
@@ -102,19 +121,8 @@ export function NavUser({
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>
-                <Sparkles />
-                Upgrade to Pro
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
                 <BadgeCheck />
                 Account
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <CreditCard />
-                Billing
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <Bell />
@@ -122,9 +130,9 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout} disabled={isLoggingOut}>
               <LogOut />
-              Log out
+              {isLoggingOut ? "Déconnexion..." : "Se déconnecter"}{" "}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
