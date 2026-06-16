@@ -1,7 +1,12 @@
-export default function ClientsPage() {
+import { ClientList } from "@/components/clients/client-list";
+import { getClients } from "@/server/actions/clients";
+
+export default async function ClientsPage() {
+  const clients = await getClients();
+
   return (
-    <div className="h-full w-full flex items-center justify-center">
-      <h1 className="text-4xl font-bold">Page Clients</h1>
+    <div className="h-full w-full flex flex-col">
+      <ClientList clients={clients} />{" "}
     </div>
   );
 }
