@@ -1,4 +1,3 @@
-// components/app-sidebar.tsx
 "use client";
 
 import * as React from "react";
@@ -14,9 +13,8 @@ import {
 } from "@/components/ui/sidebar";
 import { NavMain } from "./nav-main";
 import { NavUser } from "./nav-user";
-import { navItems } from "@/lib/data/nav-items";
+import { navItems, categoryLabels } from "@/lib/data/nav-items";
 import { Role } from "@/generated/prisma/client";
-import { AudioWaveform } from "lucide-react";
 import { Icon } from "../ui/Icon";
 
 export type AppSidebarUser = {
@@ -31,10 +29,6 @@ type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
 };
 
 export function AppSidebar({ user, ...props }: AppSidebarProps) {
-  const visibleItems = navItems.filter((item) =>
-    item.roles.includes(user.role),
-  );
-
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -59,7 +53,21 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={visibleItems} />
+        {Object.entries(navItems).map(([category, items]) => {
+          const visibleItems = items.filter((item) =>
+            item.roles.includes(user.role),
+          );
+
+          if (visibleItems.length === 0) return null;
+
+          return (
+            <NavMain
+              key={category}
+              items={visibleItems}
+              category={categoryLabels[category] ?? category}
+            />
+          );
+        })}
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={user} />

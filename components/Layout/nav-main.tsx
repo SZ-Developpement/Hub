@@ -30,10 +30,16 @@ export type NavMainItem = {
   }[];
 };
 
-export function NavMain({ items }: { items: NavMainItem[] }) {
+export function NavMain({
+  items,
+  category,
+}: {
+  items: NavMainItem[];
+  category?: string;
+}) {
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Platform</SidebarGroupLabel>
+      <SidebarGroupLabel>{category || "Categorie"}</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) =>
           item.items?.length ? (
