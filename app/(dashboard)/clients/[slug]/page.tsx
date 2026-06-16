@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getClientBySlug } from "@/server/actions/clients";
+import { ClientDetailActions } from "@/components/clients/client-detail-actions";
 
 export default async function ClientDetailPage({
   params,
@@ -15,10 +16,15 @@ export default async function ClientDetailPage({
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">{client.name}</h1>
-      {client.company && (
-        <p className="text-muted-foreground">{client.company}</p>
-      )}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">{client.name}</h1>
+          {client.company && (
+            <p className="text-muted-foreground">{client.company}</p>
+          )}
+        </div>
+        <ClientDetailActions client={client} />
+      </div>
 
       <div className="mt-6 grid gap-2 text-sm">
         {client.email && <p>Email : {client.email}</p>}
