@@ -11,12 +11,27 @@ export function slugify(text: string): string {
     .replace(/-+/g, "-"); // remplace les tirets multiples par un seul tiret
 }
 
+// Génère un slug unique pour un client en vérifiant la base de données
 export async function generateUniqueClientSlug(name: string): Promise<string> {
   const baseSlug = slugify(name);
   let slug = baseSlug;
   let counter = 1;
 
   while (await prisma.client.findUnique({ where: { slug } })) {
+    counter++;
+    slug = `${baseSlug}-${counter}`;
+  }
+
+  return slug;
+}
+
+// Génère un slug unique pour un projet en vérifiant la base de données
+export async function generateUniqueProjectSlug(name: string): Promise<string> {
+  const baseSlug = slugify(name);
+  let slug = baseSlug;
+  let counter = 1;
+
+  while (await prisma.project.findUnique({ where: { slug } })) {
     counter++;
     slug = `${baseSlug}-${counter}`;
   }
