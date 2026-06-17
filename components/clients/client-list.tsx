@@ -37,7 +37,7 @@ export function ClientList({ clients }: { clients: ClientListItem[] }) {
         {clients.map((client) => (
           <Link
             key={client.id}
-            href={`/clients/${client.slug}`}
+            href={`/dashboard/clients/${client.slug}`}
             className="flex items-center justify-between rounded-lg border border-border p-4 hover:bg-muted transition-colors"
           >
             <div>

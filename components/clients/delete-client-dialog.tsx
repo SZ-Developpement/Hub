@@ -35,7 +35,7 @@ export function DeleteClientDialog({
     await deleteClient(clientId);
     setPending(false);
     onOpenChange(false);
-    router.push("/clients");
+    router.push("/dashboard/clients");
   }
 
   return (
