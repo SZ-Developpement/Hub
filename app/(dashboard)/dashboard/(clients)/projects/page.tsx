@@ -1,7 +1,17 @@
-export default function ProjectsPage() {
+// app/(dashboard)/projects/page.tsx
+import { getProjects, getClientsForSelect } from "@/server/actions/projects";
+import { ProjectList } from "@/components/projects/project-list";
+
+export default async function ProjectsPage() {
+  const [projects, clients] = await Promise.all([
+    getProjects(),
+    getClientsForSelect(),
+  ]);
+
   return (
-    <div className="h-full w-full flex items-center justify-center">
-      <h1 className="text-4xl font-bold">Page Projects</h1>
+    <div>
+      <h1 className="text-2xl font-bold mb-4">Projets</h1>
+      <ProjectList projects={projects} clients={clients} />
     </div>
   );
 }
