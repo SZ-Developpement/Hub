@@ -1,20 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { ProjectStatusBadge } from "./project-status-badge";
-import { ProjectStatus } from "@/generated/prisma/client";
 import { ProjectFormDialog } from "./project-form-dialog";
-
-type ProjectListItem = {
-  id: string;
-  slug: string;
-  name: string;
-  status: ProjectStatus;
-  client: { name: string } | null;
-};
+import ProjectMiniCard, { ProjectMiniCardProps } from "./project-mini-card";
 
 type ClientOption = { id: string; name: string };
 
@@ -22,7 +12,7 @@ export function ProjectList({
   projects,
   clients,
 }: {
-  projects: ProjectListItem[];
+  projects: ProjectMiniCardProps[];
   clients: ClientOption[];
 }) {
   const [open, setOpen] = useState(false);
@@ -47,26 +37,12 @@ export function ProjectList({
       <div className="grid grid-cols-4 gap-4">
         {projects.length === 0 && (
           <p className="text-center h-20 flex items-center justify-center text-muted-foreground text-sm col-span-full">
-            Aucun client pour le moment.
+            Aucun projet pour le moment.
           </p>
         )}
 
         {projects.map((project) => (
-          <Link
-            key={project.id}
-            href={`/dashboard/projects/${project.slug}`}
-            className="flex items-center justify-between rounded-lg border border-border p-4 hover:bg-muted transition-colors"
-          >
-            <div>
-              <p className="font-medium">{project.name}</p>
-              {project.client && (
-                <p className="text-sm text-muted-foreground">
-                  {project.client.name}
-                </p>
-              )}
-            </div>
-            <ProjectStatusBadge status={project.status} />
-          </Link>
+          <ProjectMiniCard key={project.id} project={project} />
         ))}
       </div>
     </div>

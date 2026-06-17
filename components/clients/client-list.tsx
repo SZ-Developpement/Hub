@@ -1,21 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { ClientFormDialog } from "./client-form-dialog";
+import ClientMiniCard, { ClientMiniCardProps } from "./client-mini-card";
 
-type ClientListItem = {
-  id: string;
-  name: string;
-  company: string | null;
-  email: string | null;
-  slug: string;
-  _count: { projects: number };
-};
-
-export function ClientList({ clients }: { clients: ClientListItem[] }) {
+export function ClientList({ clients }: { clients: ClientMiniCardProps[] }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -43,23 +34,7 @@ export function ClientList({ clients }: { clients: ClientListItem[] }) {
         )}
 
         {clients.map((client) => (
-          <Link
-            key={client.id}
-            href={`/dashboard/clients/${client.slug}`}
-            className="flex items-center justify-between rounded-lg border border-border p-4 hover:bg-muted transition-colors"
-          >
-            <div>
-              <p className="font-medium">{client.name}</p>
-              {client.company && (
-                <p className="text-sm text-muted-foreground">
-                  {client.company}
-                </p>
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {client._count.projects} projet(s)
-            </p>
-          </Link>
+          <ClientMiniCard key={client.id} client={client} />
         ))}
       </div>
     </div>
