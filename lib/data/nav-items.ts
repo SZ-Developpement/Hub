@@ -9,7 +9,8 @@ export type NavItem = NavMainItem & {
 
 export const categoryLabels: Record<string, string> = {
   dashboard: "Vue d'ensemble",
-  admin: "Administration",
+  client: "Clients",
+  gestion: "Gestion Administrative",
 };
 
 export const navItems: Record<string, NavItem[]> = {
@@ -21,7 +22,21 @@ export const navItems: Record<string, NavItem[]> = {
       roles: ["FOUNDER", "ADMIN", "MEMBER"],
     },
   ],
-  admin: [
+  client: [
+    {
+      title: "Liste des clients",
+      url: "/dashboard/clients",
+      icon: Users,
+      roles: ["FOUNDER", "ADMIN"],
+    },
+    {
+      title: "Projets",
+      url: "/dashboard/projects",
+      icon: FolderKanban,
+      roles: ["FOUNDER", "ADMIN"],
+    },
+  ],
+  gestion: [
     {
       title: "Utilisateurs",
       url: "/dashboard/admin/users",
