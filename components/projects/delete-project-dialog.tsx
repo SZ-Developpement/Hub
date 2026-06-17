@@ -36,7 +36,7 @@ export function DeleteProjectDialog({
     await deleteProject(projectId);
     setPending(false);
     onOpenChange(false);
-    router.push("/projects");
+    router.push("/dashboard/projects");
   }
 
   return (

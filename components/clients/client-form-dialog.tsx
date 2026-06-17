@@ -7,13 +7,15 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { createClient, updateClient } from "@/server/actions/clients";
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "../ui/field";
 
 type ClientFormDialogProps = {
   open: boolean;
@@ -67,59 +69,99 @@ export function ClientFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? "Modifier le client" : "Nouveau client"}
           </DialogTitle>
+          <DialogDescription>
+            {isEditing
+              ? "Modifiez les informations du client, en modifiant le formulaire ci-dessous."
+              : "Ajoutez un nouveau client, en remplissant le formulaire ci-dessous."}
+          </DialogDescription>
         </DialogHeader>
 
         <form action={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="name">Nom *</Label>
-            <Input id="name" name="name" defaultValue={client?.name} required />
-            {errors.name && (
-              <p className="text-sm text-destructive mt-1">{errors.name[0]}</p>
-            )}
-          </div>
+          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="name">Nom *</FieldLabel>
+              <Input
+                id="name"
+                name="name"
+                type="text"
+                placeholder="Nom du client"
+                defaultValue={client?.name}
+                required
+              />
+              {errors.name && (
+                <FieldDescription>{errors.name[0]}</FieldDescription>
+              )}
+            </Field>
 
-          <div>
-            <Label htmlFor="company">Entreprise</Label>
-            <Input
-              id="company"
-              name="company"
-              defaultValue={client?.company ?? ""}
-            />
-          </div>
+            <Field>
+              <FieldLabel htmlFor="company">Entreprise</FieldLabel>
+              <Input
+                id="company"
+                name="company"
+                type="text"
+                placeholder="Nom de l'entreprise"
+                defaultValue={client?.company ?? ""}
+              />
+              {errors.company && (
+                <FieldDescription>{errors.company[0]}</FieldDescription>
+              )}
+            </Field>
 
-          <div>
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              defaultValue={client?.email ?? ""}
-            />
-            {errors.email && (
-              <p className="text-sm text-destructive mt-1">{errors.email[0]}</p>
-            )}
-          </div>
+            <Field>
+              <FieldLabel htmlFor="email">Email</FieldLabel>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="Adresse email"
+                defaultValue={client?.email ?? ""}
+                required
+              />
+              {errors.email && (
+                <FieldDescription>{errors.email[0]}</FieldDescription>
+              )}
+            </Field>
 
-          <div>
-            <Label htmlFor="phone">Téléphone</Label>
-            <Input id="phone" name="phone" defaultValue={client?.phone ?? ""} />
-          </div>
+            <Field>
+              <FieldLabel htmlFor="phone">Téléphone</FieldLabel>
+              <Input
+                id="phone"
+                name="phone"
+                type="tel"
+                placeholder="Numéro de téléphone"
+                defaultValue={client?.phone ?? ""}
+                required
+              />
+              {errors.phone && (
+                <FieldDescription>{errors.phone[0]}</FieldDescription>
+              )}
+            </Field>
 
-          <div>
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
-              name="notes"
-              defaultValue={client?.notes ?? ""}
-            />
-          </div>
+            <Field>
+              <FieldLabel htmlFor="notes">Notes</FieldLabel>
+              <Textarea
+                id="notes"
+                name="notes"
+                placeholder="Notes sur le client"
+                defaultValue={client?.notes ?? ""}
+                className="resize-none"
+              />
+              {errors.notes && (
+                <FieldDescription>{errors.notes[0]}</FieldDescription>
+              )}
+            </Field>
+          </FieldGroup>
 
           <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Annuler</Button>
+            </DialogClose>
+
             <Button type="submit" disabled={pending}>
               {pending
                 ? isEditing

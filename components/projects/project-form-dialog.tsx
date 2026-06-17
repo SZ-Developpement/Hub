@@ -1,4 +1,3 @@
-// components/projects/project-form-dialog.tsx
 "use client";
 
 import { useState } from "react";
@@ -8,10 +7,11 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "../ui/field";
 import { createProject, updateProject } from "@/server/actions/projects";
 import { ProjectStatus } from "@/generated/prisma/client";
 
@@ -99,93 +100,112 @@ export function ProjectFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? "Modifier le projet" : "Nouveau projet"}
           </DialogTitle>
+          <DialogDescription>
+            {isEditing
+              ? "Modifiez les informations du projet, en modifiant le formulaire ci-dessous."
+              : "Ajoutez un nouveau projet, en remplissant le formulaire ci-dessous."}
+          </DialogDescription>
         </DialogHeader>
 
         <form action={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="name">Nom *</Label>
-            <Input
-              id="name"
-              name="name"
-              defaultValue={project?.name}
-              required
-            />
-            {errors.name && (
-              <p className="text-sm text-destructive mt-1">{errors.name[0]}</p>
-            )}
-          </div>
-
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              name="description"
-              defaultValue={project?.description ?? ""}
-            />
-          </div>
-
-          <div>
-            <Label>Statut</Label>
-            <Select
-              value={status}
-              onValueChange={(value) => setStatus(value as ProjectStatus)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(statusLabels).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label>Client</Label>
-            <Select value={clientId} onValueChange={setClientId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Aucun client (projet interne)" />
-              </SelectTrigger>
-              <SelectContent>
-                {clients.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="startDate">Date de début</Label>
+          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="name">Nom *</FieldLabel>
               <Input
-                id="startDate"
-                name="startDate"
-                type="date"
-                defaultValue={toDateInputValue(project?.startDate ?? null)}
+                id="name"
+                name="name"
+                type="text"
+                placeholder="Nom du projet"
+                defaultValue={project?.name}
+                required
               />
-            </div>
-            <div>
-              <Label htmlFor="endDate">Date de fin</Label>
-              <Input
-                id="endDate"
-                name="endDate"
-                type="date"
-                defaultValue={toDateInputValue(project?.endDate ?? null)}
+              {errors.name && (
+                <FieldDescription>{errors.name[0]}</FieldDescription>
+              )}
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="description">Description</FieldLabel>
+              <Textarea
+                id="description"
+                name="description"
+                placeholder="Description du projet"
+                defaultValue={project?.description ?? ""}
+                className="resize-none"
               />
+              {errors.description && (
+                <FieldDescription>{errors.description[0]}</FieldDescription>
+              )}
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="status">Statut</FieldLabel>
+              <Select
+                value={status}
+                onValueChange={(value) => setStatus(value as ProjectStatus)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(statusLabels).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="clientId">Client</FieldLabel>
+              <Select value={clientId} onValueChange={setClientId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Aucun client (projet interne)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clients.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Field>
+                <FieldLabel htmlFor="startDate">Date de début</FieldLabel>
+                <Input
+                  id="startDate"
+                  name="startDate"
+                  type="date"
+                  defaultValue={toDateInputValue(project?.startDate ?? null)}
+                />
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="endDate">Date de fin</FieldLabel>
+                <Input
+                  id="endDate"
+                  name="endDate"
+                  type="date"
+                  defaultValue={toDateInputValue(project?.endDate ?? null)}
+                />
+              </Field>
             </div>
-          </div>
+          </FieldGroup>
 
           <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Annuler</Button>
+            </DialogClose>
+
             <Button type="submit" disabled={pending}>
               {pending
                 ? isEditing
