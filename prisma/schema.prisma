@@ -52,6 +52,7 @@ model Client {
 
 model Project {
   id          String        @id @default(cuid())
+  slug        String        @unique
   name        String
   description String?
   status      ProjectStatus @default(PLANNING)
@@ -65,6 +66,8 @@ model Project {
 
   members     ProjectMember[]
 }
+
+
 
 enum ProjectStatus {
   PLANNING
