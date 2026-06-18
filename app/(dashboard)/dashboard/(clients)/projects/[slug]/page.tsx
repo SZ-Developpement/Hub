@@ -34,10 +34,10 @@ export default async function ProjectDetailPage({
           </div>
           {project.client && (
             <Link
-              href={`/clients/${project.client.slug}`}
+              href={`/dashboard/clients/${project.client.slug}`}
               className="text-sm text-muted-foreground hover:underline"
             >
-              {project.client.name}
+              {project.client.firstName} {project.client.lastName}
             </Link>
           )}
         </div>
