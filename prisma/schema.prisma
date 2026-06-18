@@ -40,6 +40,8 @@ model Client {
   id        String   @id @default(cuid())
   slug      String   @unique
   name      String
+  firstName String?
+  lastName  String?
   company   String?
   email     String?
   phone     String?
