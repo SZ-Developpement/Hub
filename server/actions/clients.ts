@@ -14,7 +14,14 @@ export async function getClients() {
   // Récupère tous les clients depuis la base de données, triés par date de création décroissante
   return prisma.client.findMany({
     orderBy: { createdAt: "desc" },
-    include: { _count: { select: { projects: true } } },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      slug: true,
+      createdAt: true,
+      _count: { select: { projects: true } },
+    },
   });
 }
 

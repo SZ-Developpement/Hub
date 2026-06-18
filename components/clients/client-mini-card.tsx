@@ -7,6 +7,7 @@ export interface ClientMiniCardProps {
   name: string;
   email: string | null;
   slug: string;
+  createdAt: Date;
   _count: { projects: number };
 }
 
@@ -22,7 +23,7 @@ export default function ClientMiniCard({
           <p className="font-medium text-base">{client.name}</p>
           <Badge variant="outline">
             {client._count.projects} projet
-            {client._count.projects !== 1 ? "" : "s"}
+            {client._count.projects !== 1 ? "s" : ""}
           </Badge>
         </div>
         {client.email && (
