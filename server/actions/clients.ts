@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/auth/session";
 import { clientSchema, type ClientFormValues } from "@/lib/validations/client";
 import { revalidatePath } from "next/cache";
 import { generateUniqueClientSlug } from "@/lib/utils/slug";
+import { buildClientName } from "@/lib/utils/client-name";
 
 // Fonction pour récupérer tous les clients
 export async function getClients() {
@@ -17,6 +18,9 @@ export async function getClients() {
     select: {
       id: true,
       name: true,
+      firstName: true,
+      lastName: true,
+      company: true,
       email: true,
       slug: true,
       createdAt: true,
@@ -60,12 +64,22 @@ export async function createClient(values: ClientFormValues) {
     return { error: parsed.error.flatten().fieldErrors };
   }
 
-  // Génère un slug unique pour le client en utilisant son nom
-  const slug = await generateUniqueClientSlug(parsed.data.name);
+  // Construit le nom complet du client à partir du prénom et du nom de famille
+  const name = buildClientName(parsed.data.firstName, parsed.data.lastName);
+  const slug = await generateUniqueClientSlug(name);
 
   // Crée un nouveau client dans la base de données avec les données validées et le slug généré
   const client = await prisma.client.create({
-    data: { ...parsed.data, slug },
+    data: {
+      name,
+      firstName: parsed.data.firstName,
+      lastName: parsed.data.lastName,
+      company: parsed.data.company || null,
+      email: parsed.data.email || null,
+      phone: parsed.data.phone || null,
+      notes: parsed.data.notes || null,
+      slug,
+    },
   });
 
   // Revalide le cache pour la route des clients afin de refléter les changements
