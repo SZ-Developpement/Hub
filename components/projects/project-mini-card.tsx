@@ -10,6 +10,7 @@ export interface ProjectMiniCardProps {
   status: ProjectStatus;
   description: string | null;
   client: { name: string } | null;
+  createdAt: Date;
 }
 
 export default function ProjectMiniCard({
