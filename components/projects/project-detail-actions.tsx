@@ -1,4 +1,3 @@
-// components/projects/project-detail-actions.tsx
 "use client";
 
 import { useState } from "react";

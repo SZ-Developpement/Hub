@@ -1,4 +1,3 @@
-// components/projects/delete-project-dialog.tsx
 "use client";
 
 import { useState } from "react";
