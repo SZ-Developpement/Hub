@@ -22,7 +22,8 @@ type ClientFormDialogProps = {
   onOpenChange: (open: boolean) => void;
   client?: {
     id: string;
-    name: string;
+    firstName: string | null;
+    lastName: string | null;
     company: string | null;
     email: string | null;
     phone: string | null;
@@ -45,7 +46,8 @@ export function ClientFormDialog({
     setErrors({});
 
     const values = {
-      name: formData.get("name") as string,
+      firstName: formData.get("firstName") as string,
+      lastName: formData.get("lastName") as string,
       company: formData.get("company") as string,
       email: formData.get("email") as string,
       phone: formData.get("phone") as string,
@@ -84,17 +86,32 @@ export function ClientFormDialog({
         <form action={handleSubmit} className="space-y-4">
           <FieldGroup>
             <Field>
-              <FieldLabel htmlFor="name">Nom *</FieldLabel>
+              <FieldLabel htmlFor="firstName">Prénom *</FieldLabel>
               <Input
-                id="name"
-                name="name"
+                id="firstName"
+                name="firstName"
                 type="text"
-                placeholder="Nom du client"
-                defaultValue={client?.name}
+                placeholder="Prénom"
+                defaultValue={client?.firstName ?? ""}
                 required
               />
-              {errors.name && (
-                <FieldDescription>{errors.name[0]}</FieldDescription>
+              {errors.firstName && (
+                <FieldDescription>{errors.firstName[0]}</FieldDescription>
+              )}
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="lastName">Nom *</FieldLabel>
+              <Input
+                id="lastName"
+                name="lastName"
+                type="text"
+                placeholder="Nom"
+                defaultValue={client?.lastName ?? ""}
+                required
+              />
+              {errors.lastName && (
+                <FieldDescription>{errors.lastName[0]}</FieldDescription>
               )}
             </Field>
 

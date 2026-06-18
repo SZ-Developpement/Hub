@@ -9,7 +9,8 @@ import { DeleteClientDialog } from "./delete-client-dialog";
 type ClientDetailActionsProps = {
   client: {
     id: string;
-    name: string;
+    firstName: string | null;
+    lastName: string | null;
     company: string | null;
     email: string | null;
     phone: string | null;
@@ -46,7 +47,7 @@ export function ClientDetailActions({ client }: ClientDetailActionsProps) {
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         clientId={client.id}
-        clientName={client.name}
+        clientName={`${client.firstName} ${client.lastName}`}
       />
     </div>
   );

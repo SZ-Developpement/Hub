@@ -32,9 +32,14 @@ export function ClientList({ clients }: { clients: ClientMiniCardProps[] }) {
   const [sortBy, setSortBy] = useState<SortOption>("name");
 
   const filteredAndSorted = useMemo(() => {
-    const filtered = clients.filter((client) =>
-      client.name.toLowerCase().includes(search.toLowerCase()),
-    );
+    const filtered = clients.filter((client) => {
+      const query = search.toLowerCase();
+      return (
+        client.name.toLowerCase().includes(query) ||
+        client.firstName?.toLowerCase().includes(query) ||
+        client.lastName?.toLowerCase().includes(query)
+      );
+    });
 
     return [...filtered].sort((a, b) => {
       switch (sortBy) {

@@ -5,6 +5,9 @@ import { Badge } from "@/components/ui/badge";
 export interface ClientMiniCardProps {
   id: string;
   name: string;
+  firstName: string | null;
+  lastName: string | null;
+  company: string | null;
   email: string | null;
   slug: string;
   createdAt: Date;
