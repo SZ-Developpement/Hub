@@ -77,7 +77,16 @@ export async function updateProject(id: string, values: ProjectFormValues) {
     return { error: parsed.error.flatten().fieldErrors };
   }
 
-  // Met à jour le projet existant dans la base de données avec les données validées
+  // Récupère le projet actuel pour vérifier si le statut a changé
+  const currentProject = await prisma.project.findUnique({
+    where: { id },
+    select: { status: true },
+  });
+
+  // Vérifie si le statut du projet a changé par rapport à l'état actuel
+  const statusChanged = currentProject?.status !== parsed.data.status;
+
+  // Met à jour le projet correspondant à l'ID fourni dans la base de données avec les nouvelles données validées
   const project = await prisma.project.update({
     where: { id },
     data: {
@@ -85,6 +94,7 @@ export async function updateProject(id: string, values: ProjectFormValues) {
       description: parsed.data.description || null,
       notes: parsed.data.notes || null,
       status: parsed.data.status,
+      ...(statusChanged && { statusChangedAt: new Date() }),
       clientId: parsed.data.clientId || null,
       startDate: parsed.data.startDate ? new Date(parsed.data.startDate) : null,
       endDate: parsed.data.endDate ? new Date(parsed.data.endDate) : null,
