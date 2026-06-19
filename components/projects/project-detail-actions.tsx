@@ -19,6 +19,7 @@ type ProjectDetailActionsProps = {
     clientId: string | null;
     startDate: Date | null;
     endDate: Date | null;
+    notes: string | null;
   };
 };
 
