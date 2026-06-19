@@ -20,9 +20,6 @@ const fakestep: Milestone[] = [
   { label: "Étape 3", date: "2023-03-01", status: "todo" },
 ];
 
-const note =
-  "Rendu intermédiaire demandé par le client pour le 20 juin — démo staging fonctionnelle requise pour présentation board. Intégration Sanity en attente d'accès API côté Acme. Marge de 2 jours conservée avant la livraison finale.";
-
 const team: { name: string; role: string }[] = [
   { name: "Alexis De Jesus", role: "FOUNDER" },
   { name: "Thomas Bernard", role: "MEMBER" },
@@ -117,7 +114,7 @@ export default async function ProjectDetailPage({
           </InfosCard>
 
           {/* Notes internes */}
-          {note && <InternesCard text={note} />}
+          {project.notes && <InternesCard text={project.notes} />}
 
           {/* Livrables */}
           <LivrablesCard />

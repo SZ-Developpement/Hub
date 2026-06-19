@@ -109,7 +109,7 @@ export default async function ClientDetailPage({
             )}
           </InfosCard>
 
-          {note && <InternesCard text={note} />}
+          {client.notes && <InternesCard text={client.notes} />}
 
           {/* Metadonnées */}
           <InfosCard title="Métadonnées" className="flex flex-col gap-3">

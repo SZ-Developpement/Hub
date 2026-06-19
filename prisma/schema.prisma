@@ -63,6 +63,7 @@ model Project {
   slug        String        @unique
   name        String
   description String?
+  notes       String?
   status      ProjectStatus @default(PLANNING)
   startDate   DateTime?
   endDate     DateTime?
