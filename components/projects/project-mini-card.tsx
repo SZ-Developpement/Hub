@@ -20,13 +20,15 @@ export default function ProjectMiniCard({
 }) {
   return (
     <Link key={project.id} href={`/dashboard/projects/${project.slug}`}>
-      <Card className="px-4 gap-0">
+      <Card className="px-4 gap-0.5">
         <div className="flex flex-row items-center justify-between">
           <p className="font-medium text-base">{project.name}</p>
           <ProjectStatusBadge status={project.status} />
         </div>
         {project.description && (
-          <p className="text-sm text-muted-foreground">{project.description}</p>
+          <p className="text-sm text-muted-foreground line-clamp-2">
+            {project.description}
+          </p>
         )}
       </Card>
     </Link>

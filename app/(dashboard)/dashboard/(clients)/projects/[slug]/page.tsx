@@ -1,4 +1,3 @@
-// app/(dashboard)/projects/[slug]/page.tsx
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getSession } from "@/lib/auth/session";
