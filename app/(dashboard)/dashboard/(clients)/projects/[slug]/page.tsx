@@ -5,6 +5,28 @@ import { getSession } from "@/lib/auth/session";
 import { getProjectBySlug } from "@/server/actions/projects";
 import { ProjectStatusBadge } from "@/components/projects/project-status-badge";
 import { ProjectDetailActions } from "@/components/projects/project-detail-actions";
+import { CalendarDays, ExternalLink } from "lucide-react";
+import { InfosCard } from "@/components/card/infosCard";
+import { InternesCard } from "@/components/card/InternesCard";
+import LivrablesCard from "@/components/projects/components/LivrablesCard";
+import TeamCard from "@/components/projects/components/TeamCard";
+import { LetterAvatar } from "@/components/ui/LetterAvatar";
+import { Milestone, Timeline } from "@/components/projects/components/Timeline";
+
+// Fake
+const fakestep: Milestone[] = [
+  { label: "Étape 1", date: "2023-01-01", status: "done" },
+  { label: "Étape 2", date: "2023-02-01", status: "active" },
+  { label: "Étape 3", date: "2023-03-01", status: "todo" },
+];
+
+const note =
+  "Rendu intermédiaire demandé par le client pour le 20 juin — démo staging fonctionnelle requise pour présentation board. Intégration Sanity en attente d'accès API côté Acme. Marge de 2 jours conservée avant la livraison finale.";
+
+const team: { name: string; role: string }[] = [
+  { name: "Alexis De Jesus", role: "FOUNDER" },
+  { name: "Thomas Bernard", role: "MEMBER" },
+];
 
 export default async function ProjectDetailPage({
   params,
@@ -25,36 +47,166 @@ export default async function ProjectDetailPage({
     session?.user.role === "FOUNDER" || session?.user.role === "ADMIN";
 
   return (
-    <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold">{project.name}</h1>
+    <div className="flex flex-col gap-8">
+      {/* Header Project */}
+      <div className="flex flex-row items-start justify-between">
+        {/* Information Project */}
+        <div className="flex flex-col gap-2 items-start">
+          {/* Project Title and Status */}
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-semibold text-foreground">
+              {project.name}
+            </h1>
             <ProjectStatusBadge status={project.status} />
           </div>
+
+          {/* Client Name */}
           {project.client && (
             <Link
               href={`/dashboard/clients/${project.client.slug}`}
-              className="text-sm text-muted-foreground hover:underline"
+              className="flex items-center gap-1.5 text-sm text-blue-600 hover:underline"
             >
-              {project.client.firstName} {project.client.lastName}
+              Client : {project.client.firstName} {project.client.lastName}
+              <ExternalLink size={12} />
             </Link>
           )}
+
+          {/* Project Dates */}
+          <div className="flex items-center gap-6 text-sm text-muted-foreground">
+            {project.startDate && (
+              <span className="flex items-center gap-1.5">
+                <CalendarDays size={13} />
+                Début :{" "}
+                {project.startDate.toLocaleDateString("fr-FR", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </span>
+            )}
+            {project.endDate && (
+              <span className="flex items-center gap-1.5">
+                <CalendarDays size={13} />
+                Échéance :{" "}
+                {project.endDate.toLocaleDateString("fr-FR", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </span>
+            )}
+          </div>
         </div>
+
+        {/* Actions Project */}
         {canEdit && <ProjectDetailActions project={project} />}
       </div>
 
-      {project.description && (
-        <p className="mt-4 text-sm">{project.description}</p>
-      )}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_460px] gap-5">
+        {/* Partie Gauche */}
+        <div className="flex flex-col gap-5">
+          {project.description && (
+            <InfosCard title="Description">
+              <p className=" text-sm">{project.description}</p>
+            </InfosCard>
+          )}
 
-      <div className="mt-6 grid gap-2 text-sm text-muted-foreground">
-        {project.startDate && (
-          <p>Début : {project.startDate.toLocaleDateString("fr-FR")}</p>
-        )}
-        {project.endDate && (
-          <p>Fin prévue : {project.endDate.toLocaleDateString("fr-FR")}</p>
-        )}
+          {/* Jalons / Étapes */}
+          <InfosCard title="Jalons / Étapes">
+            <Timeline data={fakestep} />
+          </InfosCard>
+
+          {/* Notes internes */}
+          {note && <InternesCard text={note} />}
+
+          {/* Livrables */}
+          <LivrablesCard />
+        </div>
+
+        {/* Partie Droite */}
+        <div className="flex flex-col gap-5">
+          {/* Équipe */}
+          <InfosCard title="Équipe assignée" className="flex flex-col gap-3">
+            {/* {project.teamMembers.map((member) => ( */}
+            {team.map((member, index) => (
+              <TeamCard
+                key={member.name + index}
+                name={member.name}
+                role={member.role}
+              />
+            ))}
+          </InfosCard>
+
+          {/* Client */}
+          {project.client && (
+            <InfosCard title="Client">
+              <div className="flex items-center gap-3 mb-2">
+                <LetterAvatar
+                  name={`${project.client.firstName} ${project.client.lastName}`}
+                  size="md"
+                />
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    {project.client.firstName} {project.client.lastName}
+                  </p>
+                  {
+                    <p className="text-xs text-muted-foreground">
+                      {project.client.company || "Aucune société"}
+                    </p>
+                  }
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mb-3">
+                {project.client.email}
+              </p>
+              <Link
+                href={`/dashboard/clients/${project.client.slug}`}
+                className="w-full flex items-center justify-center gap-1.5 text-xs font-medium text-blue-600 border border-blue-200 rounded-lg px-3 py-2 hover:bg-blue-50 transition-colors"
+              >
+                Voir la fiche client
+                <ExternalLink size={11} />
+              </Link>
+            </InfosCard>
+          )}
+
+          {/* Metadonnées */}
+          <InfosCard title="Métadonnées" className="flex flex-col gap-3">
+            <div>
+              <p className="text-[11px] font-medium text-muted-foreground mb-0.5">
+                Créé le
+              </p>
+              <p className="text-sm text-foreground">
+                {project.createdAt.toLocaleDateString("fr-FR", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                }) || "Date non disponible"}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-[11px] font-medium text-muted-foreground mb-0.5">
+                Modifié le
+              </p>
+              <p className="text-sm text-foreground">
+                {project.updatedAt.toLocaleDateString("fr-FR", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                }) || "Date non disponible"}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-[11px] font-medium text-muted-foreground mb-0.5">
+                Slug
+              </p>
+              <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
+                {project.slug || "Slug non disponible"}
+              </code>
+            </div>
+          </InfosCard>
+        </div>
       </div>
     </div>
   );
