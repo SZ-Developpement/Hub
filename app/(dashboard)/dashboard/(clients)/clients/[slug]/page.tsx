@@ -1,6 +1,18 @@
 import { notFound } from "next/navigation";
 import { getClientBySlug } from "@/server/actions/clients";
 import { ClientDetailActions } from "@/components/clients/client-detail-actions";
+import { LetterAvatar } from "@/components/ui/LetterAvatar";
+import { Mail, Phone } from "lucide-react";
+import Link from "next/link";
+import { ClientStatusBadge } from "@/components/clients/client-status-badge";
+import { formatPhoneNumber } from "@/lib/utils/format-phone";
+import { DataCard, InfosCard, KV } from "@/components/card/infosCard";
+import { InternesCard } from "@/components/card/InternesCard";
+import HistoriqueCard from "@/components/clients/components/historique";
+import { ClientProjectsCard } from "@/components/clients/components/TabsProjects";
+
+const note =
+  "Client très réactif. Préfère les échanges par email. Validation côté direction systématiquement requise avant tout démarrage de prestation. Budget annuel confirmé pour 2026, renégociation prévue en Q4.";
 
 export default async function ClientDetailPage({
   params,
@@ -15,37 +27,121 @@ export default async function ClientDetailPage({
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">
-            {client.firstName} {client.lastName}
-          </h1>
-          {client.company && (
-            <p className="text-muted-foreground">{client.company}</p>
-          )}
+    <div className="flex flex-col gap-8">
+      {/* Header Client */}
+      <div className="flex items-start justify-between gap-4 mb-8">
+        <div className="flex items-center gap-4">
+          <LetterAvatar
+            name={`${client.firstName} ${client.lastName}`}
+            size="2xl"
+          />
+          <div className="flex flex-col gap-1">
+            {/* Name and Status */}
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-semibold text-foreground">
+                {client.firstName} {client.lastName}
+              </h1>
+              <ClientStatusBadge status={client.status} />
+            </div>
+
+            {/* Company */}
+            <p className="text-sm text-muted-foreground">
+              {client.company || "Aucune société"}
+            </p>
+
+            {/* Contact Information */}
+            <div className="flex items-center gap-4">
+              {/* Email */}
+              {client.email && (
+                <Link
+                  href={`mailto:${client.email}`}
+                  className="flex items-center gap-1.5 text-sm text-blue-600 hover:underline"
+                >
+                  <Mail size={13} />
+                  {client.email}
+                </Link>
+              )}
+
+              {/* Téléphone */}
+              {client.phone && (
+                <Link
+                  href={`tel:${client.phone}`}
+                  className="flex items-center gap-1.5 text-sm text-blue-600 hover:underline"
+                >
+                  <Phone size={13} />
+                  {formatPhoneNumber(client.phone)}
+                </Link>
+              )}
+            </div>
+          </div>
         </div>
+
         <ClientDetailActions client={client} />
       </div>
 
-      <div className="mt-6 grid gap-2 text-sm">
-        {client.email && <p>Email : {client.email}</p>}
-        {client.phone && <p>Téléphone : {client.phone}</p>}
-        {client.notes && <p>Notes : {client.notes}</p>}
-      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_460px] gap-5">
+        {/* Partie Gauche */}
+        <div className="flex flex-col gap-5">
+          <ClientProjectsCard projects={client.projects} />
 
-      <h2 className="text-lg font-semibold mt-8 mb-2">
-        Projets ({client.projects.length})
-      </h2>
-      {client.projects.length === 0 ? (
-        <p className="text-muted-foreground text-sm">Aucun projet associé.</p>
-      ) : (
-        <ul className="space-y-1">
-          {client.projects.map((project) => (
-            <li key={project.id}>{project.name}</li>
-          ))}
-        </ul>
-      )}
+          <HistoriqueCard />
+        </div>
+
+        {/* Partie Droite */}
+        <div className="flex flex-col gap-5">
+          <InfosCard title="Coordonnées" className="flex flex-col gap-0">
+            <KV label="Prénom" value={client.firstName} />
+            <KV label="Nom" value={client.lastName} />
+            <KV label="Entreprise" value={client.company || "Aucune société"} />
+            {client.email && (
+              <KV
+                label="Email"
+                value={client.email}
+                href={`mailto:${client.email}`}
+              />
+            )}
+            {client.phone && (
+              <KV
+                label="Téléphone"
+                value={formatPhoneNumber(client.phone)}
+                href={`tel:${client.phone}`}
+              />
+            )}
+          </InfosCard>
+
+          {note && <InternesCard text={note} />}
+
+          {/* Metadonnées */}
+          <InfosCard title="Métadonnées" className="flex flex-col gap-3">
+            <DataCard
+              title="Créé le"
+              value={
+                client.createdAt.toLocaleDateString("fr-FR", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                }) || "Date non disponible"
+              }
+            />
+
+            <DataCard
+              title="Modifié le"
+              value={
+                client.updatedAt.toLocaleDateString("fr-FR", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                }) || "Date non disponible"
+              }
+            />
+
+            <DataCard
+              title="Slug"
+              code={client.slug || "Slug non disponible"}
+            />
+          </InfosCard>
+        </div>
+      </div>
     </div>
   );
 }

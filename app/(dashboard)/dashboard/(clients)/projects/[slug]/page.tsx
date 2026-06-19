@@ -6,7 +6,7 @@ import { getProjectBySlug } from "@/server/actions/projects";
 import { ProjectStatusBadge } from "@/components/projects/project-status-badge";
 import { ProjectDetailActions } from "@/components/projects/project-detail-actions";
 import { CalendarDays, ExternalLink } from "lucide-react";
-import { InfosCard } from "@/components/card/infosCard";
+import { DataCard, InfosCard } from "@/components/card/infosCard";
 import { InternesCard } from "@/components/card/InternesCard";
 import LivrablesCard from "@/components/projects/components/LivrablesCard";
 import TeamCard from "@/components/projects/components/TeamCard";
@@ -171,40 +171,32 @@ export default async function ProjectDetailPage({
 
           {/* Metadonnées */}
           <InfosCard title="Métadonnées" className="flex flex-col gap-3">
-            <div>
-              <p className="text-[11px] font-medium text-muted-foreground mb-0.5">
-                Créé le
-              </p>
-              <p className="text-sm text-foreground">
-                {project.createdAt.toLocaleDateString("fr-FR", {
+            <DataCard
+              title="Créé le"
+              value={
+                project.createdAt.toLocaleDateString("fr-FR", {
                   day: "numeric",
                   month: "long",
                   year: "numeric",
-                }) || "Date non disponible"}
-              </p>
-            </div>
+                }) || "Date non disponible"
+              }
+            />
 
-            <div>
-              <p className="text-[11px] font-medium text-muted-foreground mb-0.5">
-                Modifié le
-              </p>
-              <p className="text-sm text-foreground">
-                {project.updatedAt.toLocaleDateString("fr-FR", {
+            <DataCard
+              title="Modifié le"
+              value={
+                project.updatedAt.toLocaleDateString("fr-FR", {
                   day: "numeric",
                   month: "long",
                   year: "numeric",
-                }) || "Date non disponible"}
-              </p>
-            </div>
+                }) || "Date non disponible"
+              }
+            />
 
-            <div>
-              <p className="text-[11px] font-medium text-muted-foreground mb-0.5">
-                Slug
-              </p>
-              <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
-                {project.slug || "Slug non disponible"}
-              </code>
-            </div>
+            <DataCard
+              title="Slug"
+              code={project.slug || "Slug non disponible"}
+            />
           </InfosCard>
         </div>
       </div>
