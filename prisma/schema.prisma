@@ -58,24 +58,25 @@ enum ClientStatus {
   INACTIF
   PROSPECT
 }
+
 model Project {
-  id          String        @id @default(cuid())
-  slug        String        @unique
-  name        String
-  description String?
-  notes       String?
-  status      ProjectStatus @default(PLANNING)
-  startDate   DateTime?
-  endDate     DateTime?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id              String        @id @default(cuid())
+  slug            String        @unique
+  name            String
+  description     String?
+  notes           String?
+  status          ProjectStatus @default(PLANNING)
+  statusChangedAt DateTime      @default(now())
+  startDate       DateTime?
+  endDate         DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
-  client      Client?       @relation(fields: [clientId], references: [id])
-  clientId    String?
+  client          Client?       @relation(fields: [clientId], references: [id])
+  clientId        String?
 
-  members     ProjectMember[]
+  members         ProjectMember[]
 }
-
 
 
 enum ProjectStatus {
