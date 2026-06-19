@@ -46,12 +46,18 @@ model Client {
   email     String?
   phone     String?
   notes     String?
+  status    ClientStatus @default(ACTIF)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   projects  Project[]
 }
 
+enum ClientStatus {
+  ACTIF
+  INACTIF
+  PROSPECT
+}
 model Project {
   id          String        @id @default(cuid())
   slug        String        @unique
