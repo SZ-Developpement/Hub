@@ -1,51 +1,39 @@
-import { AppSidebar } from "@/components/Layout/app-sidebar";
+import { requireAuth } from "@/lib/auth/session";
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
+  AppSidebar,
+  type AppSidebarUser,
+} from "@/components/Layout/app-sidebar";
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { DashboardBreadcrumb } from "@/components/Layout/dashboard-breadcrumb";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await requireAuth();
+
   return (
     <SidebarProvider>
-      <AppSidebar />
+      <AppSidebar user={session.user as AppSidebarUser} />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator
-              orientation="vertical"
-              className="mr-2 data-[orientation=vertical]:h-4"
-            />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="#">
-                    Build Your Application
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Data Fetching</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
+        <header className="fixed w-full flex h-12 shrink-0 items-center gap-2 ease-linear">
+          <div className="flex items-center justify-between px-4">
+            <div className="flex items-center justify-start gap-2">
+              <SidebarTrigger className="-ml-1" />
+
+              <div className="h-4 w-px mr-2 bg-border/80" />
+              <DashboardBreadcrumb />
+            </div>
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
+        <div className="min-h-screen flex flex-1 flex-col gap-4 p-4 pt-16">
+          {children}
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );
