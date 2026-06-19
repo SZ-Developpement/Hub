@@ -52,6 +52,7 @@ export async function createProject(values: ProjectFormValues) {
     data: {
       name: parsed.data.name,
       description: parsed.data.description || null,
+      notes: parsed.data.notes || null,
       status: parsed.data.status,
       clientId: parsed.data.clientId || null,
       startDate: parsed.data.startDate ? new Date(parsed.data.startDate) : null,
@@ -82,6 +83,7 @@ export async function updateProject(id: string, values: ProjectFormValues) {
     data: {
       name: parsed.data.name,
       description: parsed.data.description || null,
+      notes: parsed.data.notes || null,
       status: parsed.data.status,
       clientId: parsed.data.clientId || null,
       startDate: parsed.data.startDate ? new Date(parsed.data.startDate) : null,

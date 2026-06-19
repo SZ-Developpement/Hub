@@ -39,6 +39,7 @@ type ProjectFormDialogProps = {
     clientId: string | null;
     startDate: Date | null;
     endDate: Date | null;
+    notes: string | null;
   };
 };
 
@@ -81,6 +82,7 @@ export function ProjectFormDialog({
       clientId,
       startDate: formData.get("startDate") as string,
       endDate: formData.get("endDate") as string,
+      notes: formData.get("notes") as string,
     };
 
     const result = isEditing
@@ -199,6 +201,20 @@ export function ProjectFormDialog({
                 />
               </Field>
             </div>
+
+            <Field>
+              <FieldLabel htmlFor="notes">Notes</FieldLabel>
+              <Textarea
+                id="notes"
+                name="notes"
+                placeholder="Notes sur le client"
+                defaultValue={project?.notes ?? ""}
+                className="resize-none"
+              />
+              {errors.notes && (
+                <FieldDescription>{errors.notes[0]}</FieldDescription>
+              )}
+            </Field>
           </FieldGroup>
 
           <DialogFooter>
