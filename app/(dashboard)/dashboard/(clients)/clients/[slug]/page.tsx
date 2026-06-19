@@ -11,9 +11,6 @@ import { InternesCard } from "@/components/card/InternesCard";
 import HistoriqueCard from "@/components/clients/components/historique";
 import { ClientProjectsCard } from "@/components/clients/components/TabsProjects";
 
-const note =
-  "Client très réactif. Préfère les échanges par email. Validation côté direction systématiquement requise avant tout démarrage de prestation. Budget annuel confirmé pour 2026, renégociation prévue en Q4.";
-
 export default async function ClientDetailPage({
   params,
 }: {
