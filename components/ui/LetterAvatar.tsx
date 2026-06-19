@@ -20,7 +20,7 @@ interface LetterAvatarProps {
   name?: string;
   initials?: string;
   color?: string;
-  size?: "xs" | "sm" | "md" | "lg" | "xl";
+  size?: "xs" | "sm" | "md" | "lg" | "xl" | "2xl";
 }
 
 export function LetterAvatar({
@@ -46,6 +46,7 @@ export function LetterAvatar({
     md: "w-9 h-9 text-sm",
     lg: "w-11 h-11 text-base",
     xl: "w-16 h-16 text-xl",
+    "2xl": "w-20 h-20 text-xl",
   };
 
   // 3. Secours (fallback) si la couleur demandée n'existe pas dans le dictionnaire
