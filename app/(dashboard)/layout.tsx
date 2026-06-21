@@ -1,4 +1,4 @@
-import { requireAuth } from "@/lib/auth/session";
+import { requireAuth, getCurrentMembership } from "@/lib/auth/session";
 import {
   AppSidebar,
   type AppSidebarUser,
@@ -16,10 +16,18 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }>) {
   const session = await requireAuth();
+  const membership = await getCurrentMembership();
+
+  const sidebarUser: AppSidebarUser = {
+    name: session.user.name,
+    email: session.user.email,
+    image: session.user.image,
+    role: membership.role,
+  };
 
   return (
     <SidebarProvider>
-      <AppSidebar user={session.user as AppSidebarUser} />
+      <AppSidebar user={sidebarUser} />
       <SidebarInset>
         <header className="fixed w-full flex h-12 shrink-0 items-center gap-2 ease-linear">
           <div className="flex items-center justify-between px-4">
