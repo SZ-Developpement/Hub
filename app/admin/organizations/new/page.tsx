@@ -1,5 +1,5 @@
-import { requireSuperAdmin } from "@/lib/auth/session";
 import { CreateOrganizationForm } from "@/components/admin/create-organization-form";
+import { requireSuperAdmin } from "@/lib/auth/session";
 
 export default async function NewOrganizationPage() {
   await requireSuperAdmin();
