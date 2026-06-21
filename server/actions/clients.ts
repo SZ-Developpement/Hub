@@ -10,10 +10,11 @@ import { buildClientName } from "@/lib/utils/client-name";
 // Fonction pour récupérer tous les clients
 export async function getClients() {
   // Vérifie si l'utilisateur a le rôle requis pour accéder à cette action
-  await requireRole(["FOUNDER", "ADMIN"]);
+  const membership = await requireRole(["FOUNDER", "ADMIN"]);
 
   // Récupère tous les clients depuis la base de données, triés par date de création décroissante
   return prisma.client.findMany({
+    where: { organizationId: membership.organizationId },
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
@@ -32,11 +33,11 @@ export async function getClients() {
 // Fonction pour récupérer un client par son slug
 export async function getClientBySlug(slug: string) {
   // Vérifie si l'utilisateur a le rôle requis pour accéder à cette action
-  await requireRole(["FOUNDER", "ADMIN"]);
+  const membership = await requireRole(["FOUNDER", "ADMIN"]);
 
   // Récupère le client correspondant au slug fourni depuis la base de données, incluant ses projets associés
-  return prisma.client.findUnique({
-    where: { slug },
+  return prisma.client.findFirst({
+    where: { slug, organizationId: membership.organizationId },
     include: { projects: true },
   });
 }
@@ -44,11 +45,11 @@ export async function getClientBySlug(slug: string) {
 // Fonction pour récupérer un client par son ID
 export async function getClientById(id: string) {
   // Vérifie si l'utilisateur a le rôle requis pour accéder à cette action
-  await requireRole(["FOUNDER", "ADMIN"]);
+  const membership = await requireRole(["FOUNDER", "ADMIN"]);
 
   // Récupère le client correspondant à l'ID fourni depuis la base de données, incluant ses projets associés
-  return prisma.client.findUnique({
-    where: { id },
+  return prisma.client.findFirst({
+    where: { id, organizationId: membership.organizationId },
     include: { projects: true },
   });
 }
@@ -56,7 +57,7 @@ export async function getClientById(id: string) {
 // Fonction pour créer un nouveau client
 export async function createClient(values: ClientFormValues) {
   // Vérifie si l'utilisateur a le rôle requis pour accéder à cette action
-  await requireRole(["FOUNDER", "ADMIN"]);
+  const membership = await requireRole(["FOUNDER", "ADMIN"]);
 
   // Valide les données du formulaire en utilisant le schéma défini
   const parsed = clientSchema.safeParse(values);
@@ -79,6 +80,7 @@ export async function createClient(values: ClientFormValues) {
       phone: parsed.data.phone || null,
       notes: parsed.data.notes || null,
       slug,
+      organizationId: membership.organizationId,
     },
   });
 
@@ -90,7 +92,7 @@ export async function createClient(values: ClientFormValues) {
 // Fonction pour mettre à jour un client existant
 export async function updateClient(id: string, values: ClientFormValues) {
   // Vérifie si l'utilisateur a le rôle requis pour accéder à cette action
-  await requireRole(["FOUNDER", "ADMIN"]);
+  const membership = await requireRole(["FOUNDER", "ADMIN"]);
 
   // Valide les données du formulaire en utilisant le schéma défini
   const parsed = clientSchema.safeParse(values);
@@ -100,7 +102,7 @@ export async function updateClient(id: string, values: ClientFormValues) {
 
   // Met à jour le client existant dans la base de données avec les données validées
   const client = await prisma.client.update({
-    where: { id },
+    where: { id, organizationId: membership.organizationId },
     data: parsed.data,
   });
 
@@ -113,10 +115,12 @@ export async function updateClient(id: string, values: ClientFormValues) {
 // Fonction pour supprimer un client existant
 export async function deleteClient(id: string) {
   // Vérifie si l'utilisateur a le rôle requis pour accéder à cette action
-  await requireRole(["FOUNDER", "ADMIN"]);
+  const membership = await requireRole(["FOUNDER", "ADMIN"]);
 
   // Supprime le client correspondant à l'ID fourni depuis la base de données
-  await prisma.client.delete({ where: { id } });
+  await prisma.client.delete({
+    where: { id, organizationId: membership.organizationId },
+  });
 
   // Revalide le cache pour la route des clients afin de refléter les changements
   revalidatePath("/dashboard/clients");
