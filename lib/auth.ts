@@ -21,10 +21,15 @@ export const auth = betterAuth({
   // },
   user: {
     additionalFields: {
-      role: {
-        type: "string",
-        defaultValue: "MEMBER",
-        input: false, // empêche un user de définir son propre rôle à l'inscription
+      isSuperAdmin: {
+        type: "boolean",
+        defaultValue: false,
+        input: false,
+      },
+      mustChangePassword: {
+        type: "boolean",
+        defaultValue: false,
+        input: false,
       },
     },
   },
