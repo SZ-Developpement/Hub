@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
+import { admin } from "better-auth/plugins";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { prisma } from "./prisma";
+import { prisma } from "@/lib/prisma";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -21,11 +22,7 @@ export const auth = betterAuth({
   // },
   user: {
     additionalFields: {
-      isSuperAdmin: {
-        type: "boolean",
-        defaultValue: false,
-        input: false,
-      },
+      isSuperAdmin: { type: "boolean", defaultValue: false, input: false },
       mustChangePassword: {
         type: "boolean",
         defaultValue: false,
@@ -33,4 +30,7 @@ export const auth = betterAuth({
       },
     },
   },
+  plugins: [
+    admin(), // ← nécessaire pour débloquer auth.api.createUser
+  ],
 });
