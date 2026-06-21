@@ -32,9 +32,10 @@ export function CreateOrganizationForm() {
   const [selectedUser, setSelectedUser] = useState<SearchedUser | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchedUser[]>([]);
-  const [result, setResult] = useState<{ tempPassword: string | null } | null>(
-    null,
-  );
+  const [result, setResult] = useState<{
+    tempPassword: string | null;
+    founderEmail: string;
+  } | null>(null);
 
   async function handleSearch(query: string) {
     setSearchQuery(query);
@@ -73,7 +74,14 @@ export function CreateOrganizationForm() {
           };
 
     const res = await createOrganization(orgData, founder);
-    setResult({ tempPassword: res.tempPassword });
+
+    // On détermine l'email à afficher selon le mode utilisé
+    const founderEmail =
+      founderMode === "existing" && selectedUser
+        ? selectedUser.email
+        : (formData.get("founderEmail") as string);
+
+    setResult({ tempPassword: res.tempPassword, founderEmail });
     setPending(false);
   }
 
@@ -100,7 +108,8 @@ export function CreateOrganizationForm() {
             </>
           ) : (
             <p className="text-sm">
-              L&apos;utilisateur existant a été rattaché comme fondateur.
+              <strong>{result.founderEmail}</strong> a été rattaché comme
+              fondateur.
             </p>
           )}
         </div>
