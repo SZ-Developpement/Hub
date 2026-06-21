@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTransition } from "react";
 import { ChevronsUpDown, Building2 } from "lucide-react";
 import {
   DropdownMenu,
@@ -32,17 +33,17 @@ export function OrganizationSwitcher({
   activeOrganizationId: string;
 }) {
   const { isMobile } = useSidebar();
-  const [pending, setPending] = React.useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const activeOrg = organizations.find((o) => o.id === activeOrganizationId);
 
   if (!activeOrg) return null;
 
-  async function handleSwitch(organizationId: string) {
+  function handleSwitch(organizationId: string) {
     if (organizationId === activeOrganizationId) return;
-    setPending(true);
-    await switchOrganization(organizationId);
-    // switchOrganization fait un redirect côté serveur, donc pas besoin de gérer la suite ici
+    startTransition(() => {
+      switchOrganization(organizationId);
+    });
   }
 
   return (
@@ -52,7 +53,7 @@ export function OrganizationSwitcher({
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              disabled={pending}
+              disabled={isPending}
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
