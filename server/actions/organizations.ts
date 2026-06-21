@@ -7,6 +7,7 @@ import { setActiveOrganizationId } from "@/lib/auth/organization";
 import { generateTempPassword } from "@/lib/utils/password";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { generateUniqueOrganizationSlug } from "@/lib/utils/slug";
 
 // ============================================
 // Lecture
@@ -88,7 +89,6 @@ export async function switchOrganization(organizationId: string) {
 // Type pour les données de création d'organisation
 type CreateOrganizationInput = {
   name: string;
-  slug: string;
   legalName?: string;
   siret?: string;
   address?: string;
@@ -110,11 +110,13 @@ export async function createOrganization(
 ) {
   await requireSuperAdmin();
 
+  const slug = await generateUniqueOrganizationSlug(orgData.name);
+
   // Crée l'organisation
   const organization = await prisma.organization.create({
     data: {
       name: orgData.name,
-      slug: orgData.slug,
+      slug,
       legalName: orgData.legalName || null,
       siret: orgData.siret || null,
       address: orgData.address || null,
