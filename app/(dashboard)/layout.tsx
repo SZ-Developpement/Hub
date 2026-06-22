@@ -25,6 +25,7 @@ export default async function DashboardLayout({
     email: session.user.email,
     image: session.user.image,
     role: membership.role,
+    isSuperAdmin: session.user.isSuperAdmin as boolean,
   };
 
   const organizations = myOrganizations.map((m) => ({

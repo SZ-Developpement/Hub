@@ -1,12 +1,19 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
+import { Building2 } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
 } from "@/components/ui/sidebar";
 import { NavMain } from "./nav-main";
 import { NavUser } from "./nav-user";
@@ -19,6 +26,7 @@ export type AppSidebarUser = {
   email: string;
   image?: string | null;
   role: Role;
+  isSuperAdmin: boolean;
 };
 
 type OrganizationOption = { id: string; name: string; logoUrl: string | null };
@@ -44,21 +52,36 @@ export function AppSidebar({
         />
       </SidebarHeader>
       <SidebarContent>
-        {Object.entries(navItems).map(([category, items]) => {
-          const visibleItems = items.filter((item) =>
-            item.roles.includes(user.role),
-          );
+        <SidebarGroup>
+          {Object.entries(navItems).map(([category, items]) => {
+            const visibleItems = items.filter((item) =>
+              item.roles.includes(user.role),
+            );
 
-          if (visibleItems.length === 0) return null;
+            if (visibleItems.length === 0) return null;
 
-          return (
-            <NavMain
-              key={category}
-              items={visibleItems}
-              category={categoryLabels[category] ?? category}
-            />
-          );
-        })}
+            return (
+              <NavMain
+                key={category}
+                items={visibleItems}
+                category={categoryLabels[category] ?? category}
+              />
+            );
+          })}
+        </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>Super Admin</SidebarGroupLabel>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="Organisations">
+                <Link href="/admin/organizations">
+                  <Building2 />
+                  <span>Organisations</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={user} />
