@@ -18,12 +18,12 @@ export async function getSession() {
 export async function requireAuth() {
   const session = await getSession();
 
-  // Si l'utilisateur n'est pas connecté, on le redirige vers la page de login
+  // Si aucune session n'est trouvée, l'utilisateur n'est pas connecté → redirection vers la page de login
   if (!session) {
     redirect("/login");
   }
 
-  // Si le mot de passe doit être changé, on bloque l'accès au reste de l'app
+  // Si l'utilisateur doit changer son mot de passe, on le redirige vers la page de changement de mot de passe
   if (session.user.mustChangePassword) {
     redirect("/change-password");
   }
