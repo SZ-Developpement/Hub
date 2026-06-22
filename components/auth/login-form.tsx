@@ -17,15 +17,19 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import Link from "next/link";
+import { CheckCircle } from "lucide-react";
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const passwordChanged = searchParams.get("passwordChanged") === "true";
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +63,15 @@ export function LoginForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
+      {/* Message de confirmation après changement de mot de passe */}
+      {passwordChanged && (
+        <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-3">
+          <CheckCircle className="size-4 text-emerald-600 shrink-0" />
+          <p className="text-sm text-emerald-700">
+            Mot de passe modifié avec succès. Reconnectez-vous pour continuer.
+          </p>
+        </div>
+      )}
       <Card>
         <CardHeader>
           <CardTitle>Se connecter</CardTitle>
