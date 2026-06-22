@@ -12,10 +12,11 @@ import { revalidatePath } from "next/cache";
 // Fonction pour récupérer tous les projets
 export async function getProjects() {
   // Vérifie si l'utilisateur a le rôle requis pour accéder à cette action
-  await requireRole(["FOUNDER", "ADMIN", "MEMBER"]);
+  const membership = await requireRole(["FOUNDER", "ADMIN", "MEMBER"]);
 
   // Récupère tous les projets depuis la base de données, triés par date de création décroissante
   return prisma.project.findMany({
+    where: { organizationId: membership.organizationId },
     orderBy: { createdAt: "desc" },
     include: { client: { select: { name: true } } },
   });
@@ -24,11 +25,11 @@ export async function getProjects() {
 // Fonction pour récupérer un projet par son slug
 export async function getProjectBySlug(slug: string) {
   // Vérifie si l'utilisateur a le rôle requis pour accéder à cette action
-  await requireRole(["FOUNDER", "ADMIN", "MEMBER"]);
+  const membership = await requireRole(["FOUNDER", "ADMIN", "MEMBER"]);
 
   // Récupère le projet correspondant au slug fourni depuis la base de données, incluant le client associé
-  return prisma.project.findUnique({
-    where: { slug },
+  return prisma.project.findFirst({
+    where: { slug, organizationId: membership.organizationId },
     include: { client: true },
   });
 }
@@ -36,7 +37,7 @@ export async function getProjectBySlug(slug: string) {
 // Fonction pour récupérer un projet par son ID
 export async function createProject(values: ProjectFormValues) {
   // Vérifie si l'utilisateur a le rôle requis pour accéder à cette action
-  await requireRole(["FOUNDER", "ADMIN"]);
+  const membership = await requireRole(["FOUNDER", "ADMIN"]);
 
   // Valide les données du formulaire en utilisant le schéma défini
   const parsed = projectSchema.safeParse(values);
@@ -58,6 +59,7 @@ export async function createProject(values: ProjectFormValues) {
       startDate: parsed.data.startDate ? new Date(parsed.data.startDate) : null,
       endDate: parsed.data.endDate ? new Date(parsed.data.endDate) : null,
       slug,
+      organizationId: membership.organizationId,
     },
   });
 
@@ -69,7 +71,7 @@ export async function createProject(values: ProjectFormValues) {
 // Fonction pour mettre à jour un projet existant
 export async function updateProject(id: string, values: ProjectFormValues) {
   // Vérifie si l'utilisateur a le rôle requis pour accéder à cette action
-  await requireRole(["FOUNDER", "ADMIN"]);
+  const membership = await requireRole(["FOUNDER", "ADMIN"]);
 
   // Valide les données du formulaire en utilisant le schéma défini
   const parsed = projectSchema.safeParse(values);
@@ -78,8 +80,8 @@ export async function updateProject(id: string, values: ProjectFormValues) {
   }
 
   // Récupère le projet actuel pour vérifier si le statut a changé
-  const currentProject = await prisma.project.findUnique({
-    where: { id },
+  const currentProject = await prisma.project.findFirst({
+    where: { id, organizationId: membership.organizationId },
     select: { status: true },
   });
 
@@ -88,7 +90,7 @@ export async function updateProject(id: string, values: ProjectFormValues) {
 
   // Met à jour le projet correspondant à l'ID fourni dans la base de données avec les nouvelles données validées
   const project = await prisma.project.update({
-    where: { id },
+    where: { id, organizationId: membership.organizationId },
     data: {
       name: parsed.data.name,
       description: parsed.data.description || null,
@@ -109,10 +111,12 @@ export async function updateProject(id: string, values: ProjectFormValues) {
 // Fonction pour supprimer un projet existant
 export async function deleteProject(id: string) {
   // Vérifie si l'utilisateur a le rôle requis pour accéder à cette action
-  await requireRole(["FOUNDER", "ADMIN"]);
+  const membership = await requireRole(["FOUNDER", "ADMIN"]);
 
   // Supprime le projet correspondant à l'ID fourni depuis la base de données
-  await prisma.project.delete({ where: { id } });
+  await prisma.project.delete({
+    where: { id, organizationId: membership.organizationId },
+  });
 
   // Revalide le chemin "/dashboard/projects" pour mettre à jour le cache et refléter les changements
   revalidatePath("/dashboard/projects");
@@ -121,10 +125,11 @@ export async function deleteProject(id: string) {
 // Fonction pour récupérer tous les projets pour un menu déroulant
 export async function getClientsForSelect() {
   // Vérifie si l'utilisateur a le rôle requis pour accéder à cette action
-  await requireRole(["FOUNDER", "ADMIN"]);
+  const membership = await requireRole(["FOUNDER", "ADMIN"]);
 
   // Récupère tous les clients depuis la base de données, en sélectionnant uniquement l'ID et le nom, triés par nom croissant
   return prisma.client.findMany({
+    where: { organizationId: membership.organizationId },
     select: { id: true, name: true },
     orderBy: { name: "asc" },
   });

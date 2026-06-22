@@ -38,3 +38,19 @@ export async function generateUniqueProjectSlug(name: string): Promise<string> {
 
   return slug;
 }
+
+// Génère un slug unique pour une organisation en vérifiant la base de données
+export async function generateUniqueOrganizationSlug(
+  name: string,
+): Promise<string> {
+  const baseSlug = slugify(name);
+  let slug = baseSlug;
+  let counter = 1;
+
+  while (await prisma.organization.findUnique({ where: { slug } })) {
+    counter++;
+    slug = `${baseSlug}-${counter}`;
+  }
+
+  return slug;
+}

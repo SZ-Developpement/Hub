@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getSession } from "@/lib/auth/session";
+import { getCurrentMembership } from "@/lib/auth/session";
 import { getProjectBySlug } from "@/server/actions/projects";
 import { ProjectStatusBadge } from "@/components/projects/project-status-badge";
 import { ProjectDetailActions } from "@/components/projects/project-detail-actions";
@@ -30,17 +30,16 @@ export default async function ProjectDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const [project, session] = await Promise.all([
+  const [project, membership] = await Promise.all([
     getProjectBySlug(slug),
-    getSession(),
+    getCurrentMembership(),
   ]);
+
+  const canEdit = membership.role === "FOUNDER" || membership.role === "ADMIN";
 
   if (!project) {
     notFound();
   }
-
-  const canEdit =
-    session?.user.role === "FOUNDER" || session?.user.role === "ADMIN";
 
   return (
     <div className="flex flex-col gap-8">

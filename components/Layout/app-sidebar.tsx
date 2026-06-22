@@ -1,73 +1,87 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
+import { Building2 } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
   SidebarRail,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
 } from "@/components/ui/sidebar";
 import { NavMain } from "./nav-main";
 import { NavUser } from "./nav-user";
 import { navItems, categoryLabels } from "@/lib/data/nav-items";
 import { Role } from "@/generated/prisma/client";
-import { Icon } from "../ui/Icon";
+import { OrganizationSwitcher } from "./organization-switcher";
 
 export type AppSidebarUser = {
   name: string;
   email: string;
   image?: string | null;
   role: Role;
+  isSuperAdmin: boolean;
 };
+
+type OrganizationOption = { id: string; name: string; logoUrl: string | null };
 
 type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
   user: AppSidebarUser;
+  organizations: OrganizationOption[];
+  activeOrganizationId: string;
 };
 
-export function AppSidebar({ user, ...props }: AppSidebarProps) {
+export function AppSidebar({
+  user,
+  organizations,
+  activeOrganizationId,
+  ...props
+}: AppSidebarProps) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              size="lg"
-              className="cursor-default hover:bg-transparent active:bg-transparent"
-              tabIndex={-1}
-            >
-              {/* Icon */}
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <Icon size={32} />
-              </div>
-              {/* Description */}
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">SZ Hub</span>
-                <span className="truncate text-xs">Dashboard App</span>
-              </div>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <OrganizationSwitcher
+          organizations={organizations}
+          activeOrganizationId={activeOrganizationId}
+        />
       </SidebarHeader>
       <SidebarContent>
-        {Object.entries(navItems).map(([category, items]) => {
-          const visibleItems = items.filter((item) =>
-            item.roles.includes(user.role),
-          );
+        <SidebarGroup>
+          {Object.entries(navItems).map(([category, items]) => {
+            const visibleItems = items.filter((item) =>
+              item.roles.includes(user.role),
+            );
 
-          if (visibleItems.length === 0) return null;
+            if (visibleItems.length === 0) return null;
 
-          return (
-            <NavMain
-              key={category}
-              items={visibleItems}
-              category={categoryLabels[category] ?? category}
-            />
-          );
-        })}
+            return (
+              <NavMain
+                key={category}
+                items={visibleItems}
+                category={categoryLabels[category] ?? category}
+              />
+            );
+          })}
+        </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>Super Admin</SidebarGroupLabel>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="Organisations">
+                <Link href="/admin/organizations">
+                  <Building2 />
+                  <span>Organisations</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={user} />

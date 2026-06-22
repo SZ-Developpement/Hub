@@ -1,4 +1,4 @@
-import { requireAuth } from "@/lib/auth/session";
+import { requireAuth, getCurrentMembership } from "@/lib/auth/session";
 import {
   AppSidebar,
   type AppSidebarUser,
@@ -9,6 +9,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { DashboardBreadcrumb } from "@/components/Layout/dashboard-breadcrumb";
+import { getMyOrganizations } from "@/server/actions/organizations";
 
 export default async function DashboardLayout({
   children,
@@ -16,10 +17,30 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }>) {
   const session = await requireAuth();
+  const membership = await getCurrentMembership();
+  const myOrganizations = await getMyOrganizations();
+
+  const sidebarUser: AppSidebarUser = {
+    name: session.user.name,
+    email: session.user.email,
+    image: session.user.image,
+    role: membership.role,
+    isSuperAdmin: session.user.isSuperAdmin as boolean,
+  };
+
+  const organizations = myOrganizations.map((m) => ({
+    id: m.organization.id,
+    name: m.organization.name,
+    logoUrl: m.organization.logoUrl,
+  }));
 
   return (
     <SidebarProvider>
-      <AppSidebar user={session.user as AppSidebarUser} />
+      <AppSidebar
+        user={sidebarUser}
+        organizations={organizations}
+        activeOrganizationId={membership.organizationId}
+      />
       <SidebarInset>
         <header className="fixed w-full flex h-12 shrink-0 items-center gap-2 ease-linear">
           <div className="flex items-center justify-between px-4">

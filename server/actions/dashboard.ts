@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth/session";
+import { getCurrentMembership } from "@/lib/auth/session";
 
 // Renvoie le premier jour du mois pour une date donnée
 function startOfMonth(date: Date): Date {
@@ -25,8 +25,9 @@ function computeChange(thisMonth: number, lastMonth: number): number {
 }
 
 export async function getDashboardStats() {
-  // Vérifie que l'utilisateur est bien authentifié avant de retourner des données
-  await requireAuth();
+  // Récupère le membership (rôle + organisation active) de l'utilisateur connecté
+  const membership = await getCurrentMembership();
+  const organizationId = membership.organizationId;
 
   const now = new Date();
   const thisMonthStart = startOfMonth(now);
@@ -36,7 +37,7 @@ export async function getDashboardStats() {
   // L'ORDRE des requêtes dans le tableau doit IMPÉRATIVEMENT correspondre
   // à l'ordre des variables dans la destructuration ci-dessous.
   const [
-    totalClients, // nombre total de clients en base
+    totalClients, // nombre total de clients de l'organisation active
     newClientsThisMonth, // clients créés depuis le début du mois en cours
     newClientsLastMonth, // clients créés durant le mois précédent (période complète)
     projectsByStatus, // répartition des projets par statut (PLANNING, IN_PROGRESS, etc.)
@@ -47,27 +48,32 @@ export async function getDashboardStats() {
     completedThisMonth, // projets passés en COMPLETED ce mois-ci
     completedLastMonth, // projets passés en COMPLETED le mois dernier
   ] = await Promise.all([
-    // 1. Total clients (tous, sans filtre de date)
-    prisma.client.count(),
+    // 1. Total clients de l'organisation active
+    prisma.client.count({ where: { organizationId } }),
 
     // 2. Nouveaux clients depuis le 1er du mois en cours
     prisma.client.count({
-      where: { createdAt: { gte: thisMonthStart } },
+      where: { organizationId, createdAt: { gte: thisMonthStart } },
     }),
 
     // 3. Nouveaux clients créés durant tout le mois précédent
     prisma.client.count({
-      where: { createdAt: { gte: lastMonthStart, lt: thisMonthStart } },
+      where: {
+        organizationId,
+        createdAt: { gte: lastMonthStart, lt: thisMonthStart },
+      },
     }),
 
     // 4. Comptage des projets groupés par statut (PLANNING, IN_PROGRESS, ON_HOLD, COMPLETED, CANCELLED)
     prisma.project.groupBy({
       by: ["status"],
+      where: { organizationId },
       _count: true,
     }),
 
     // 5. Les 5 clients les plus récemment créés (pour la card "Derniers clients ajoutés")
     prisma.client.findMany({
+      where: { organizationId },
       orderBy: { createdAt: "desc" },
       take: 5,
       select: {
@@ -81,7 +87,7 @@ export async function getDashboardStats() {
 
     // 6. Les 5 projets actuellement en cours (pour la card "Projets en cours")
     prisma.project.findMany({
-      where: { status: "IN_PROGRESS" },
+      where: { organizationId, status: "IN_PROGRESS" },
       orderBy: { createdAt: "desc" },
       take: 5,
       select: {
@@ -98,6 +104,7 @@ export async function getDashboardStats() {
     //    (basé sur statusChangedAt, mis à jour uniquement quand le statut change réellement)
     prisma.project.count({
       where: {
+        organizationId,
         status: "IN_PROGRESS",
         statusChangedAt: { gte: thisMonthStart },
       },
@@ -106,6 +113,7 @@ export async function getDashboardStats() {
     // 8. Nombre de projets passés au statut IN_PROGRESS le mois dernier
     prisma.project.count({
       where: {
+        organizationId,
         status: "IN_PROGRESS",
         statusChangedAt: { gte: lastMonthStart, lt: thisMonthStart },
       },
@@ -114,6 +122,7 @@ export async function getDashboardStats() {
     // 9. Nombre de projets passés au statut COMPLETED ce mois-ci
     prisma.project.count({
       where: {
+        organizationId,
         status: "COMPLETED",
         statusChangedAt: { gte: thisMonthStart },
       },
@@ -122,6 +131,7 @@ export async function getDashboardStats() {
     // 10. Nombre de projets passés au statut COMPLETED le mois dernier
     prisma.project.count({
       where: {
+        organizationId,
         status: "COMPLETED",
         statusChangedAt: { gte: lastMonthStart, lt: thisMonthStart },
       },
