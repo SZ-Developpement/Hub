@@ -10,6 +10,14 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
+  session: {
+    expiresIn: 60 * 60 * 24 * 30, // 30 jours
+    updateAge: 60 * 60 * 24, // renouvelle si utilisée dans les 24h
+    cookieCache: {
+      enabled: true,
+      maxAge: 60 * 5, // cache 5 minutes côté client
+    },
+  },
   // socialProviders: {
   //   github: {
   //     clientId: process.env.GITHUB_CLIENT_ID || "placeholder",
