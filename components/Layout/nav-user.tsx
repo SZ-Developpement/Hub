@@ -45,7 +45,7 @@ export function NavUser({
         },
         onSuccess: () => {
           setIsLoggingOut(false);
-          router.push("/");
+          router.push("/login");
           router.refresh();
         },
         onError: (ctx) => {
