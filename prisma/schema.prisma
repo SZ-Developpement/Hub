@@ -107,6 +107,9 @@ model Organization {
   logoUrl       String?
   primaryColor  String?
 
+  paymentDelay  Int      @default(30)
+  invoices  Invoice[]
+
   vatApplicable Boolean  @default(false)
   vatRate       Float?
 
@@ -148,6 +151,9 @@ model Client {
   phone     String?
   notes     String?
   status    ClientStatus @default(ACTIF)
+
+  invoices  Invoice[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -189,6 +195,9 @@ model Project {
   statusChangedAt DateTime      @default(now())
   startDate       DateTime?
   endDate         DateTime?
+
+  invoices  Invoice[]
+
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -211,4 +220,73 @@ model ProjectMember {
   userId    String
 
   @@unique([projectId, userId])
+}
+
+// ============================================
+// FACTURES & PAIEMENTS
+// ============================================
+
+
+enum InvoiceType {
+  QUOTE    // devis
+  INVOICE  // facture
+}
+
+enum InvoiceStatus {
+  DRAFT      // brouillon
+  SENT       // envoyé
+  PAID       // payé
+  OVERDUE    // en retard
+  CANCELLED  // annulé
+}
+
+model Invoice {
+  id             String        @id @default(cuid())
+  slug           String        @unique
+  number         String        // ex: FACT-2026-001 ou DEV-2026-001
+  type           InvoiceType
+  status         InvoiceStatus @default(DRAFT)
+
+  issuedAt       DateTime      @default(now())
+  dueAt          DateTime?
+  paidAt         DateTime?
+
+  notes          String?
+
+  // Totaux calculés et stockés (pour éviter de recalculer à chaque lecture)
+  totalHT        Float         @default(0)
+  vatRate        Float?        // taux TVA au moment de la création (snapshot)
+  totalTTC       Float         @default(0)
+
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  client         Client        @relation(fields: [clientId], references: [id])
+  clientId       String
+
+  project        Project?      @relation(fields: [projectId], references: [id])
+  projectId      String?
+
+  items          InvoiceItem[]
+
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([organizationId])
+  @@index([clientId])
+}
+
+model InvoiceItem {
+  id          String   @id @default(cuid())
+  description String
+  quantity    Float    @default(1)
+  unitPrice   Float
+  total       Float    // quantity * unitPrice, calculé et stocké
+
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoiceId   String
+
+  order       Int      @default(0) // ordre d'affichage des lignes
+
+  @@index([invoiceId])
 }
