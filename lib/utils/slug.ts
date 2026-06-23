@@ -54,3 +54,19 @@ export async function generateUniqueOrganizationSlug(
 
   return slug;
 }
+
+// Génère un slug unique pour une facture en vérifiant la base de données
+export async function generateUniqueInvoiceSlug(
+  number: string,
+): Promise<string> {
+  const baseSlug = slugify(number); // ex: "fact-2026-001"
+  let slug = baseSlug;
+  let counter = 1;
+
+  while (await prisma.invoice.findUnique({ where: { slug } })) {
+    counter++;
+    slug = `${baseSlug}-${counter}`;
+  }
+
+  return slug;
+}
