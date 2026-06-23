@@ -283,3 +283,56 @@ export async function deleteInvoice(id: string) {
 
   revalidatePath("/dashboard/invoices");
 }
+
+// ============================================
+// Statistiques
+// ============================================
+
+export async function getInvoiceStats() {
+  const membership = await requireRole(["FOUNDER", "ADMIN", "MEMBER"]);
+  const orgId = membership.organizationId;
+
+  // On lance toutes les requêtes en parallèle pour de meilleures performances
+  const [totalInvoices, paidInvoicesSum, pendingSum, draftCount, totalQuotes] =
+    await Promise.all([
+      // 1. Nombre de factures (uniquement les types INVOICE)
+      prisma.invoice.count({
+        where: { organizationId: orgId, type: "INVOICE" },
+      }),
+
+      // 2. Montant des factures payées (Type INVOICE + Status PAID)
+      prisma.invoice.aggregate({
+        where: { organizationId: orgId, type: "INVOICE", status: "PAID" },
+        _sum: { totalTTC: true },
+      }),
+
+      // 3. Montant en attente d'être payé (Factures ET Devis envoyés mais pas payés)
+      // Note : Généralement on compte le statut "SENT" comme en attente.
+      prisma.invoice.aggregate({
+        where: {
+          organizationId: orgId,
+          status: "SENT",
+        },
+        _sum: { totalTTC: true },
+      }),
+
+      // 4. Nombre de brouillons (Factures et Devis confondus en statut DRAFT)
+      prisma.invoice.count({
+        where: { organizationId: orgId, status: "DRAFT" },
+      }),
+
+      // 5. Nombre de devis (uniquement les types QUOTE)
+      prisma.invoice.count({
+        where: { organizationId: orgId, type: "QUOTE" },
+      }),
+    ]);
+
+  return {
+    invoiceCount: totalInvoices,
+    paidAmount: paidInvoicesSum._sum.totalTTC || 0,
+    pendingAmount: pendingSum._sum.totalTTC || 0,
+    draftCount: draftCount,
+    quoteCount: totalQuotes,
+    totalDocuments: totalInvoices + totalQuotes,
+  };
+}
