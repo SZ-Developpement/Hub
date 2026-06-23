@@ -14,6 +14,7 @@ import { Search, ChevronRight } from "lucide-react";
 import { InvoiceStatusBadge } from "./invoice-status-badge";
 import Link from "next/link";
 import { LetterAvatar } from "../ui/LetterAvatar";
+import { getReadableType } from "@/lib/utils/type-invoice";
 
 export type InvoiceListItem = {
   id: string;
@@ -44,19 +45,6 @@ export default function InvoiceTabs({
           inv.client.name.toLowerCase().includes(search.toLowerCase()),
       );
   }, [invoices, tab, search]);
-
-  // Recuper le type de document (devis ou facture) et replace le text par un text plus lisible
-  // exemple: "QUOTE" => "Devis" et "INVOICE" => "Facture"
-  const getReadableType = (type: InvoiceType) => {
-    switch (type) {
-      case "QUOTE":
-        return "Devis";
-      case "INVOICE":
-        return "Facture";
-      default:
-        return type;
-    }
-  };
 
   return (
     <div className="flex-1 flex flex-col gap-4">
