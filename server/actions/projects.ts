@@ -34,6 +34,17 @@ export async function getProjectBySlug(slug: string) {
   });
 }
 
+export async function getProjectById(id: string) {
+  // Vérifie si l'utilisateur a le rôle requis pour accéder à cette action
+  const membership = await requireRole(["FOUNDER", "ADMIN", "MEMBER"]);
+
+  // Récupère le projet correspondant à l'ID fourni depuis la base de données, incluant le client associé
+  return prisma.project.findFirst({
+    where: { id, organizationId: membership.organizationId },
+    include: { client: true },
+  });
+}
+
 // Fonction pour récupérer un projet par son ID
 export async function createProject(values: ProjectFormValues) {
   // Vérifie si l'utilisateur a le rôle requis pour accéder à cette action
