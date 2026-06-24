@@ -1,3 +1,4 @@
+import InvoiceEditForm from "@/components/invoices/invoice-edit-form";
 import { InvoiceStatusBadge } from "@/components/invoices/invoice-status-badge";
 import { getReadableType } from "@/lib/utils/type-invoice";
 import { getInvoiceBySlug } from "@/server/actions/invoices";
@@ -14,11 +15,11 @@ export default async function EditInvoices({
   if (!invoice) notFound();
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-8 w-3xl mx-auto ">
       {/* Header Invoice */}
       <div className="flex flex-row items-start justify-between">
         {/* Information Invoice */}
-        <div className="flex flex-col gap-2 items-start">
+        <div className="flex flex-col gap-0 items-start">
           {/* Invoice Title and Status */}
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-semibold text-foreground">
@@ -31,6 +32,7 @@ export default async function EditInvoices({
           </p>
         </div>
       </div>
+      <InvoiceEditForm />
     </div>
   );
 }
