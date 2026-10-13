@@ -11,6 +11,7 @@ const TABS = [
   { href: "/parametres/documents", label: "Documents" },
   { href: "/parametres/facturation", label: "Facturation & légal" },
   { href: "/parametres/comptabilite", label: "Comptabilité" },
+  { href: "/parametres/membres", label: "Membres" },
   { href: "/parametres/compte", label: "Compte" },
 ];
 
@@ -18,7 +19,10 @@ export function SettingsNav() {
   const pathname = usePathname();
 
   return (
-    <nav aria-label="Sections des paramètres" className="-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0">
+    <nav
+      aria-label="Sections des paramètres"
+      className="-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0"
+    >
       <ul className="flex w-max gap-1 border-b md:w-full">
         {TABS.map((tab) => {
           const active = pathname === tab.href;
