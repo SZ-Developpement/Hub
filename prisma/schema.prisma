@@ -1,0 +1,860 @@
+// SZ Dev Hub — schéma de données
+//
+// Conventions :
+//  - Montants en centimes (Int), quantités en millièmes (Int), taux en points de base (Int).
+//  - Dates calendaires (émission, échéance, paiement…) en `@db.Date`, sans fuseau.
+//  - Horodatages techniques en `timestamptz` (UTC), affichés en Europe/Paris.
+//  - Toutes les données métier sont rattachées à une Organization, ce qui permet
+//    d'ajouter des membres (table Member) sans toucher au modèle.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ───────────────────────────── Authentification (Better Auth) ─────────────────────────────
+
+model User {
+  id            String   @id
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @db.Timestamptz(3)
+
+  sessions    Session[]
+  accounts    Account[]
+  memberships Member[]
+  activities  ActivityLog[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime @db.Timestamptz(3)
+  token     String   @unique
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime? @db.Timestamptz(3)
+  refreshTokenExpiresAt DateTime? @db.Timestamptz(3)
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime  @updatedAt @db.Timestamptz(3)
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime @db.Timestamptz(3)
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+/// Compteurs anti-force brute de Better Auth (stockés en base : le serverless n'a pas de mémoire partagée).
+model RateLimit {
+  id          String @id @default(cuid())
+  key         String @unique
+  count       Int
+  lastRequest BigInt
+
+  @@map("rate_limit")
+}
+
+// ───────────────────────────── Organisation & membres ─────────────────────────────
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model Organization {
+  id              String    @id @default(cuid())
+  name            String
+  /// Dernier jour (Europe/Paris) où les tâches quotidiennes ont tourné
+  /// (devis expirés, factures en retard, périodes URSSAF).
+  lastDailySyncOn DateTime? @db.Date
+  createdAt       DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime  @updatedAt @db.Timestamptz(3)
+
+  members            Member[]
+  settings           Settings?
+  numberingFormats   NumberingFormat[]
+  numberCounters     NumberCounter[]
+  contributionRates  ContributionRate[]
+  files              StoredFile[]
+  clients            Client[]
+  serviceCategories  ServiceCategory[]
+  services           Service[]
+  preQuotes          PreQuote[]
+  quotes             Quote[]
+  invoices           Invoice[]
+  payments           Payment[]
+  reminders          InvoiceReminder[]
+  expenseCategories  ExpenseCategory[]
+  expenses           Expense[]
+  urssafDeclarations UrssafDeclaration[]
+  activities         ActivityLog[]
+
+  @@map("organization")
+}
+
+model Member {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           MemberRole   @default(MEMBER)
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@map("member")
+}
+
+// ───────────────────────────── Paramètres ─────────────────────────────
+
+enum ThemeMode {
+  DARK
+  LIGHT
+  SYSTEM
+}
+
+enum DocFont {
+  HELVETICA
+  INTER
+  IBM_PLEX_SANS
+  MONTSERRAT
+  LORA
+}
+
+enum UrssafPeriodicity {
+  MONTHLY
+  QUARTERLY
+}
+
+enum PaymentMethod {
+  TRANSFER
+  CHECK
+  CARD
+  CASH
+  DIRECT_DEBIT
+  OTHER
+}
+
+model Settings {
+  id             String       @id @default(cuid())
+  organizationId String       @unique
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // ── Entreprise
+  companyName       String    @default("")
+  legalForm         String    @default("Entrepreneur individuel (EI)")
+  addressLine1      String    @default("")
+  addressLine2      String    @default("")
+  postalCode        String    @default("")
+  city              String    @default("")
+  country           String    @default("France")
+  siret             String    @default("")
+  apeCode           String    @default("")
+  vatNumber         String    @default("")
+  email             String    @default("")
+  phone             String    @default("")
+  website           String    @default("")
+  ownerFirstName    String    @default("")
+  ownerLastName     String    @default("")
+  ownerTitle        String    @default("Fondateur")
+  signatureFileId   String?   @unique
+  signatureFile     StoredFile? @relation("SettingsSignature", fields: [signatureFileId], references: [id], onDelete: SetNull)
+  iban              String    @default("")
+  bic               String    @default("")
+  bankName          String    @default("")
+  activityStartDate DateTime? @db.Date
+
+  // ── Apparence de l'application
+  appName       String      @default("SZ Dev")
+  accentColor   String      @default("#dc2626")
+  theme         ThemeMode   @default(DARK)
+  appLogoFileId String?     @unique
+  appLogoFile   StoredFile? @relation("SettingsAppLogo", fields: [appLogoFileId], references: [id], onDelete: SetNull)
+  faviconFileId String?     @unique
+  faviconFile   StoredFile? @relation("SettingsFavicon", fields: [faviconFileId], references: [id], onDelete: SetNull)
+
+  // ── Documents
+  docLogoFileId      String?     @unique
+  docLogoFile        StoredFile? @relation("SettingsDocLogo", fields: [docLogoFileId], references: [id], onDelete: SetNull)
+  docPrimaryColor    String      @default("#dc2626")
+  docFont            DocFont     @default(INTER)
+  docShowLogo        Boolean     @default(true)
+  docShowSignature   Boolean     @default(true)
+  docShowOwnerName   Boolean     @default(true)
+  docShowIban        Boolean     @default(true)
+  docShowEmail       Boolean     @default(true)
+  docShowPhone       Boolean     @default(true)
+  docShowWebsite     Boolean     @default(true)
+  docHeaderText      String      @default("")
+  docFooterText      String      @default("")
+  quoteDefaultNotes  String      @default("")
+  quoteDefaultTerms  String      @default("")
+  invoiceDefaultNotes String     @default("")
+  invoiceDefaultTerms String     @default("")
+  quoteValidityDays  Int         @default(30)
+  quoteDefaultDepositRateBp Int  @default(3000)
+
+  // ── Facturation & mentions légales
+  vatMention               String          @default("TVA non applicable, art. 293 B du CGI")
+  operationNature          String          @default("Prestation de services")
+  paymentTermDays          Int             @default(30)
+  acceptedPaymentMethods   PaymentMethod[] @default([TRANSFER])
+  latePenaltyText          String          @default("En cas de retard de paiement, une pénalité égale à trois fois le taux d'intérêt légal en vigueur sera exigible, calculée sur le montant restant dû à compter du lendemain de la date d'échéance.")
+  recoveryFeeEnabled       Boolean         @default(true)
+  recoveryFeeCents         Int             @default(4000)
+  earlyPaymentDiscountText String          @default("Pas d'escompte pour paiement anticipé.")
+  legalMentions            String          @default("")
+
+  // ── Comptabilité micro-entreprise
+  urssafPeriodicity      UrssafPeriodicity @default(QUARTERLY)
+  urssafReminderDays     Int               @default(10)
+  revenueCeilingCents    Int               @default(7770000)
+  ceilingWarningPct      Int               @default(80)
+  ceilingCriticalPct     Int               @default(95)
+  vatThresholdCents      Int               @default(3750000)
+  vatUpperThresholdCents Int               @default(4125000)
+  quoteExpiryAlertDays   Int               @default(7)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@map("settings")
+}
+
+/// Historique des taux de cotisations : le taux applicable à un encaissement est
+/// celui en vigueur à sa date. Aucun taux n'est écrit en dur dans le code.
+model ContributionRate {
+  id              String       @id @default(cuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  effectiveFrom   DateTime     @db.Date
+  /// Cotisations sociales URSSAF
+  socialRateBp    Int
+  /// Contribution à la formation professionnelle (CFP)
+  cfpRateBp       Int          @default(0)
+  /// Versement libératoire de l'impôt sur le revenu (0 si non souscrit)
+  incomeTaxRateBp Int          @default(0)
+  note            String       @default("")
+  createdAt       DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime     @updatedAt @db.Timestamptz(3)
+
+  @@unique([organizationId, effectiveFrom])
+  @@map("contribution_rate")
+}
+
+// ───────────────────────────── Numérotation ─────────────────────────────
+
+enum DocumentKind {
+  PRE_QUOTE
+  QUOTE
+  INVOICE
+  CREDIT_NOTE
+}
+
+enum YearFormat {
+  NONE
+  YY
+  YYYY
+}
+
+model NumberingFormat {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  kind           DocumentKind
+  prefix         String
+  separator      String       @default("-")
+  yearFormat     YearFormat   @default(YYYY)
+  digits         Int          @default(4)
+  updatedAt      DateTime     @updatedAt @db.Timestamptz(3)
+
+  @@unique([organizationId, kind])
+  @@map("numbering_format")
+}
+
+/// Compteur de numérotation. `year` vaut 0 quand le format ne contient pas l'année
+/// (compteur global) ; sinon le compteur repart à 1 chaque année.
+/// Incrémenté dans la même transaction que l'émission du document : pas de trou, pas de doublon.
+model NumberCounter {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  kind           DocumentKind
+  year           Int
+  lastValue      Int          @default(0)
+  updatedAt      DateTime     @updatedAt @db.Timestamptz(3)
+
+  @@unique([organizationId, kind, year])
+  @@map("number_counter")
+}
+
+// ───────────────────────────── Fichiers (Vercel Blob) ─────────────────────────────
+
+enum FileKind {
+  APP_LOGO
+  FAVICON
+  DOCUMENT_LOGO
+  SIGNATURE
+  AVATAR
+  RECEIPT
+  INVOICE_PDF
+  EINVOICE
+}
+
+model StoredFile {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  kind           FileKind
+  /// Chemin dans le store (clé du blob)
+  pathname       String
+  /// URL renvoyée par le store ; jamais exposée au navigateur (les fichiers passent par /api/files)
+  url            String
+  contentType    String
+  size           Int
+  sha256         String?
+  originalName   String?
+  uploadedById   String?
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+
+  settingsSignature Settings? @relation("SettingsSignature")
+  settingsAppLogo   Settings? @relation("SettingsAppLogo")
+  settingsFavicon   Settings? @relation("SettingsFavicon")
+  settingsDocLogo   Settings? @relation("SettingsDocLogo")
+  expense           Expense?  @relation("ExpenseReceipt")
+  invoicePdf        Invoice?  @relation("InvoicePdf")
+
+  @@index([organizationId, kind])
+  @@map("stored_file")
+}
+
+// ───────────────────────────── Clients ─────────────────────────────
+
+enum ClientType {
+  COMPANY
+  INDIVIDUAL
+}
+
+model Client {
+  id              String       @id @default(cuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  type            ClientType   @default(COMPANY)
+  /// Raison sociale (pro) ou « Prénom Nom » (particulier)
+  name            String
+  /// SIREN (9 chiffres) ou SIRET (14 chiffres), professionnels uniquement
+  siret           String       @default("")
+  vatNumber       String       @default("")
+  contactName     String       @default("")
+  contactRole     String       @default("")
+  email           String       @default("")
+  phone           String       @default("")
+  addressLine1    String       @default("")
+  addressLine2    String       @default("")
+  postalCode      String       @default("")
+  city            String       @default("")
+  country         String       @default("France")
+  /// Délai de paiement spécifique (jours) ; null = délai par défaut des paramètres
+  paymentTermDays Int?
+  notes           String       @default("")
+  archivedAt      DateTime?    @db.Timestamptz(3)
+  createdAt       DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime     @updatedAt @db.Timestamptz(3)
+
+  preQuotes PreQuote[]
+  quotes    Quote[]
+  invoices  Invoice[]
+
+  @@index([organizationId, name])
+  @@index([organizationId, archivedAt])
+  @@map("client")
+}
+
+// ───────────────────────────── Catalogue ─────────────────────────────
+
+enum Unit {
+  FLAT
+  DAY
+  HOUR
+  MONTH
+  UNIT
+}
+
+model ServiceCategory {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  position       Int          @default(0)
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+
+  services     Service[]
+  quoteLines   QuoteLine[]
+  invoiceLines InvoiceLine[]
+
+  @@unique([organizationId, name])
+  @@map("service_category")
+}
+
+model Service {
+  id             String           @id @default(cuid())
+  organizationId String
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  categoryId     String?
+  category       ServiceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  name           String
+  description    String           @default("")
+  unit           Unit             @default(FLAT)
+  unitPriceCents Int
+  archivedAt     DateTime?        @db.Timestamptz(3)
+  createdAt      DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime         @updatedAt @db.Timestamptz(3)
+
+  quoteLines   QuoteLine[]
+  invoiceLines InvoiceLine[]
+
+  @@index([organizationId, archivedAt])
+  @@map("service")
+}
+
+// ───────────────────────────── Pré-devis ─────────────────────────────
+
+enum PreQuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  DECLINED
+}
+
+model PreQuote {
+  id             String         @id @default(cuid())
+  organizationId String
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  clientId       String
+  client         Client         @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  number         String
+  title          String
+  status         PreQuoteStatus @default(DRAFT)
+  issueDate      DateTime       @db.Date
+  /// Besoin exprimé par le client
+  need           String         @default("")
+  /// TJM de référence utilisé pour suggérer la fourchette
+  dailyRateCents Int?
+  totalDaysMilli Int            @default(0)
+  priceMinCents  Int            @default(0)
+  priceMaxCents  Int            @default(0)
+  notes          String         @default("")
+  sentOn         DateTime?      @db.Date
+  respondedOn    DateTime?      @db.Date
+  createdAt      DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime       @updatedAt @db.Timestamptz(3)
+
+  items  PreQuoteItem[]
+  quotes Quote[]
+
+  @@unique([organizationId, number])
+  @@index([organizationId, issueDate])
+  @@index([organizationId, status])
+  @@index([clientId])
+  @@map("pre_quote")
+}
+
+model PreQuoteItem {
+  id          String   @id @default(cuid())
+  preQuoteId  String
+  preQuote    PreQuote @relation(fields: [preQuoteId], references: [id], onDelete: Cascade)
+  position    Int
+  label       String
+  description String   @default("")
+  /// Estimation en jours (millièmes)
+  daysMilli   Int      @default(0)
+
+  @@index([preQuoteId])
+  @@map("pre_quote_item")
+}
+
+// ───────────────────────────── Devis ─────────────────────────────
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  DECLINED
+  EXPIRED
+}
+
+enum DiscountType {
+  NONE
+  PERCENT
+  AMOUNT
+}
+
+model Quote {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  clientId       String
+  client         Client       @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  preQuoteId     String?
+  preQuote       PreQuote?    @relation(fields: [preQuoteId], references: [id], onDelete: SetNull)
+  number         String
+  title          String
+  status         QuoteStatus  @default(DRAFT)
+  issueDate      DateTime     @db.Date
+  validUntil     DateTime     @db.Date
+  discountType   DiscountType @default(NONE)
+  /// Points de base si PERCENT (10 % = 1000), centimes si AMOUNT
+  discountValue  Int          @default(0)
+  subtotalCents  Int          @default(0)
+  discountCents  Int          @default(0)
+  totalCents     Int          @default(0)
+  /// Acompte demandé à la commande (points de base), 0 = aucun
+  depositRateBp  Int          @default(0)
+  notes          String       @default("")
+  terms          String       @default("")
+  sentOn         DateTime?    @db.Date
+  acceptedOn     DateTime?    @db.Date
+  declinedOn     DateTime?    @db.Date
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime     @updatedAt @db.Timestamptz(3)
+
+  lines    QuoteLine[]
+  invoices Invoice[]
+
+  @@unique([organizationId, number])
+  @@index([organizationId, issueDate])
+  @@index([organizationId, status])
+  @@index([clientId])
+  @@index([preQuoteId])
+  @@map("quote")
+}
+
+model QuoteLine {
+  id             String           @id @default(cuid())
+  quoteId        String
+  quote          Quote            @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  position       Int
+  serviceId      String?
+  service        Service?         @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  categoryId     String?
+  category       ServiceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  label          String
+  description    String           @default("")
+  quantityMilli  Int              @default(1000)
+  unit           Unit             @default(FLAT)
+  unitPriceCents Int
+  totalCents     Int
+
+  @@index([quoteId])
+  @@index([serviceId])
+  @@map("quote_line")
+}
+
+// ───────────────────────────── Factures & avoirs ─────────────────────────────
+
+enum InvoiceType {
+  STANDARD
+  DEPOSIT
+  BALANCE
+  CREDIT_NOTE
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+model Invoice {
+  id             String        @id @default(cuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  clientId       String
+  client         Client        @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  quoteId        String?
+  quote          Quote?        @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  type           InvoiceType   @default(STANDARD)
+  status         InvoiceStatus @default(DRAFT)
+
+  /// Attribué à l'émission, dans la transaction qui incrémente le compteur. Immuable ensuite.
+  number        String?
+  sequenceYear  Int?
+  sequenceValue Int?
+
+  title           String
+  issueDate       DateTime  @db.Date
+  dueDate         DateTime  @db.Date
+  /// Date (ou période) de réalisation de la prestation
+  serviceStart    DateTime? @db.Date
+  serviceEnd      DateTime? @db.Date
+  paymentTermDays Int       @default(30)
+
+  discountType  DiscountType @default(NONE)
+  discountValue Int          @default(0)
+  /// Somme des lignes (HT)
+  subtotalCents Int          @default(0)
+  discountCents Int          @default(0)
+  /// subtotal − remise
+  totalCents    Int          @default(0)
+  /// Acomptes déduits (facture de solde)
+  depositDeductionCents Int  @default(0)
+  /// Net à payer = total − acomptes déduits. Négatif pour un avoir.
+  netCents      Int          @default(0)
+  /// Dénormalisé : somme des paiements (remboursements négatifs inclus)
+  paidCents     Int          @default(0)
+  /// Dénormalisé : somme (positive) des avoirs émis sur cette facture
+  creditedCents Int          @default(0)
+  /// Date du paiement qui a soldé la facture
+  paidOn        DateTime?    @db.Date
+  /// Facture d'acompte : pourcentage du devis (points de base)
+  depositRateBp Int?
+
+  notes String @default("")
+  terms String @default("")
+
+  /// Avoir : facture d'origine
+  creditedInvoiceId String?
+  creditedInvoice   Invoice?  @relation("CreditNotes", fields: [creditedInvoiceId], references: [id], onDelete: Restrict)
+  creditNotes       Invoice[] @relation("CreditNotes")
+  creditReason      String    @default("")
+
+  /// Acompte : facture de solde qui le déduit
+  balanceInvoiceId String?
+  balanceInvoice   Invoice?  @relation("DepositDeductions", fields: [balanceInvoiceId], references: [id], onDelete: SetNull)
+  deductedDeposits Invoice[] @relation("DepositDeductions")
+
+  issuedAt DateTime? @db.Timestamptz(3)
+  /// Photographie figée du document à l'émission (vendeur, client, lignes, mentions, style).
+  /// Source de vérité pour toute régénération et pour un futur export Factur-X.
+  snapshot Json?
+  /// PDF archivé à l'émission — jamais régénéré.
+  pdfFileId String?     @unique
+  pdfFile   StoredFile? @relation("InvoicePdf", fields: [pdfFileId], references: [id], onDelete: Restrict)
+  /// Réservé à la facturation électronique (Factur-X) — non implémenté.
+  eInvoiceFormat String?
+  eInvoiceFileId String?
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  lines     InvoiceLine[]
+  payments  Payment[]
+  reminders InvoiceReminder[]
+
+  @@unique([organizationId, number])
+  @@index([organizationId, issueDate])
+  @@index([organizationId, status])
+  @@index([organizationId, dueDate])
+  @@index([clientId])
+  @@index([quoteId])
+  @@index([creditedInvoiceId])
+  @@map("invoice")
+}
+
+model InvoiceLine {
+  id             String           @id @default(cuid())
+  invoiceId      String
+  invoice        Invoice          @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  position       Int
+  serviceId      String?
+  service        Service?         @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  categoryId     String?
+  category       ServiceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  label          String
+  description    String           @default("")
+  quantityMilli  Int              @default(1000)
+  unit           Unit             @default(FLAT)
+  unitPriceCents Int
+  totalCents     Int
+
+  @@index([invoiceId])
+  @@index([serviceId])
+  @@index([categoryId])
+  @@map("invoice_line")
+}
+
+model Payment {
+  id             String        @id @default(cuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invoiceId      String
+  invoice        Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  paidOn         DateTime      @db.Date
+  /// Négatif pour un remboursement
+  amountCents    Int
+  method         PaymentMethod @default(TRANSFER)
+  reference      String        @default("")
+  note           String        @default("")
+  createdAt      DateTime      @default(now()) @db.Timestamptz(3)
+
+  @@index([organizationId, paidOn])
+  @@index([invoiceId])
+  @@map("payment")
+}
+
+enum ReminderChannel {
+  EMAIL
+  PHONE
+  LETTER
+  OTHER
+}
+
+model InvoiceReminder {
+  id             String          @id @default(cuid())
+  organizationId String
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invoiceId      String
+  invoice        Invoice         @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  sentOn         DateTime        @db.Date
+  /// 1 = relance amiable, 2 = relance ferme, 3 = dernier avis, 4 = mise en demeure
+  level          Int
+  channel        ReminderChannel @default(EMAIL)
+  note           String          @default("")
+  createdAt      DateTime        @default(now()) @db.Timestamptz(3)
+
+  @@index([invoiceId])
+  @@map("invoice_reminder")
+}
+
+// ───────────────────────────── Comptabilité ─────────────────────────────
+
+model ExpenseCategory {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  position       Int          @default(0)
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+
+  expenses Expense[]
+
+  @@unique([organizationId, name])
+  @@map("expense_category")
+}
+
+model Expense {
+  id             String          @id @default(cuid())
+  organizationId String
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  categoryId     String
+  category       ExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  date           DateTime        @db.Date
+  supplier       String
+  label          String          @default("")
+  amountCents    Int
+  method         PaymentMethod   @default(CARD)
+  receiptFileId  String?         @unique
+  receiptFile    StoredFile?     @relation("ExpenseReceipt", fields: [receiptFileId], references: [id], onDelete: SetNull)
+  notes          String          @default("")
+  createdAt      DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime        @updatedAt @db.Timestamptz(3)
+
+  @@index([organizationId, date])
+  @@index([categoryId])
+  @@map("expense")
+}
+
+enum UrssafStatus {
+  TO_DECLARE
+  DECLARED
+  PAID
+}
+
+model UrssafDeclaration {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  periodStart    DateTime     @db.Date
+  periodEnd      DateTime     @db.Date
+  dueDate        DateTime     @db.Date
+  status         UrssafStatus @default(TO_DECLARE)
+  /// CA déclaré (figé au moment de la déclaration)
+  declaredRevenueCents Int?
+  /// Cotisations réellement appelées / payées (figées)
+  contributionsCents   Int?
+  declaredOn     DateTime?    @db.Date
+  paidOn         DateTime?    @db.Date
+  note           String       @default("")
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime     @updatedAt @db.Timestamptz(3)
+
+  @@unique([organizationId, periodStart])
+  @@index([organizationId, dueDate])
+  @@map("urssaf_declaration")
+}
+
+// ───────────────────────────── Journal d'activité ─────────────────────────────
+
+enum ActivityEntity {
+  CLIENT
+  SERVICE
+  PRE_QUOTE
+  QUOTE
+  INVOICE
+  PAYMENT
+  EXPENSE
+  URSSAF
+  SETTINGS
+}
+
+model ActivityLog {
+  id             String         @id @default(cuid())
+  organizationId String
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String?
+  user           User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  /// Identifiant technique de l'évènement, ex. « invoice.issued »
+  action         String
+  entity         ActivityEntity
+  entityId       String?
+  /// Libellé lisible, ex. « Facture F-2026-0012 émise — Acme SAS »
+  summary        String
+  amountCents    Int?
+  createdAt      DateTime       @default(now()) @db.Timestamptz(3)
+
+  @@index([organizationId, createdAt(sort: Desc)])
+  @@map("activity_log")
+}
