@@ -11,7 +11,11 @@ import { BRANDING_TAG } from "@/lib/branding";
 import { toDate, today } from "@/lib/dates";
 import { db, type Tx } from "@/lib/db";
 import { buildLegal, buildSeller, buildStyle } from "@/lib/documents/build";
-import { sampleInvoice, samplePreQuote, sampleQuote } from "@/lib/documents/sample";
+import {
+  sampleInvoice,
+  samplePreQuote,
+  sampleQuote,
+} from "@/lib/documents/sample";
 import { AppError } from "@/lib/errors";
 import {
   assertUpload,
@@ -33,9 +37,20 @@ import {
   renderQuotePdf,
 } from "@/lib/pdf/render";
 import { fileUrl, removeFile, saveFile } from "@/lib/server/files";
+import {
+  createMember,
+  removeMember,
+  resetMemberPassword,
+  updateMemberRole,
+} from "@/lib/server/members";
 import { ensureUrssafPeriods } from "@/lib/server/sync";
 import type { AppContext } from "@/lib/session";
 import { changePasswordSchema, profileSchema } from "@/lib/validation/auth";
+import {
+  memberPasswordSchema,
+  memberRoleSchema,
+  memberSchema,
+} from "@/lib/validation/members";
 import {
   accountingSchema,
   appearanceSchema,
@@ -49,6 +64,8 @@ import {
 import { idSchema, z } from "@/lib/validation/zod";
 
 const adminOnly = { roles: ADMIN_ROLES };
+/** La gestion des membres est réservée au propriétaire. */
+const ownerOnly = { roles: ["OWNER"] } as const;
 
 // ───────────────────────────── Entreprise ─────────────────────────────
 
@@ -63,7 +80,9 @@ export const saveCompany = action(
           siret: values.siret.replace(/\s/g, ""),
           iban: values.iban.replace(/\s/g, "").toUpperCase(),
           bic: values.bic.toUpperCase(),
-          activityStartDate: values.activityStartDate ? toDate(values.activityStartDate) : null,
+          activityStartDate: values.activityStartDate
+            ? toDate(values.activityStartDate)
+            : null,
         },
       }),
       db.organization.update({
@@ -77,9 +96,17 @@ export const saveCompany = action(
 
 // ───────────────────────────── Images (logos, signature) ─────────────────────────────
 
-async function storeImage(ctx: AppContext, file: File, kind: FileKind, preset: ImagePreset) {
+async function storeImage(
+  ctx: AppContext,
+  file: File,
+  kind: FileKind,
+  preset: ImagePreset,
+) {
   assertUpload(file, IMAGE_MIME_TYPES);
-  const processed = await processImage(Buffer.from(await file.arrayBuffer()), preset);
+  const processed = await processImage(
+    Buffer.from(await file.arrayBuffer()),
+    preset,
+  );
   return saveFile({
     organizationId: ctx.organizationId,
     kind,
@@ -104,20 +131,30 @@ export const saveAppearance = formAction(async (formData, ctx) => {
     theme: formData.get("theme"),
   });
   if (!parsed.success) {
-    throw new AppError(parsed.error.issues[0]?.message ?? "Paramètres d'apparence invalides.");
+    throw new AppError(
+      parsed.error.issues[0]?.message ?? "Paramètres d'apparence invalides.",
+    );
   }
 
   const logo = uploadedFile(formData, "logo");
   const favicon = uploadedFile(formData, "favicon");
-  const { appLogoFileId: previousLogo, faviconFileId: previousFavicon } = ctx.settings;
+  const { appLogoFileId: previousLogo, faviconFileId: previousFavicon } =
+    ctx.settings;
 
   const data: Prisma.SettingsUncheckedUpdateInput = { ...parsed.data };
-  if (logo) data.appLogoFileId = (await storeImage(ctx, logo, "APP_LOGO", "logo")).id;
+  if (logo)
+    data.appLogoFileId = (await storeImage(ctx, logo, "APP_LOGO", "logo")).id;
   else if (formData.get("removeLogo") === "1") data.appLogoFileId = null;
-  if (favicon) data.faviconFileId = (await storeImage(ctx, favicon, "FAVICON", "favicon")).id;
+  if (favicon)
+    data.faviconFileId = (
+      await storeImage(ctx, favicon, "FAVICON", "favicon")
+    ).id;
   else if (formData.get("removeFavicon") === "1") data.faviconFileId = null;
 
-  await db.settings.update({ where: { organizationId: ctx.organizationId }, data });
+  await db.settings.update({
+    where: { organizationId: ctx.organizationId },
+    data,
+  });
 
   // Les anciennes images de l'application ne sont référencées nulle part ailleurs.
   if (previousLogo && data.appLogoFileId !== undefined) {
@@ -189,7 +226,8 @@ async function saveNumbering(
   todayDate: Date,
 ): Promise<void> {
   const where = { organizationId_kind: { organizationId, kind } };
-  const current = (await tx.numberingFormat.findUnique({ where })) ?? DEFAULT_NUMBERING[kind];
+  const current =
+    (await tx.numberingFormat.findUnique({ where })) ?? DEFAULT_NUMBERING[kind];
   const previousYear = counterYear(current, todayDate);
   const year = counterYear(values, todayDate);
   const counterWhere = (counterYearKey: number) => ({
@@ -260,7 +298,13 @@ export const saveDocuments = action(
         data: settings,
       });
       for (const kind of DOCUMENT_KINDS) {
-        await saveNumbering(tx, ctx.organizationId, kind, numbering[kind], todayDate);
+        await saveNumbering(
+          tx,
+          ctx.organizationId,
+          kind,
+          numbering[kind],
+          todayDate,
+        );
       }
     });
   },
@@ -298,7 +342,10 @@ export const previewDocument = action(
     } else if (kind === "PRE_QUOTE") {
       pdf = await renderPreQuotePdf(samplePreQuote(sampleContext), assets);
     } else {
-      pdf = await renderInvoicePdf(sampleInvoice(sampleContext, kind === "CREDIT_NOTE"), assets);
+      pdf = await renderInvoicePdf(
+        sampleInvoice(sampleContext, kind === "CREDIT_NOTE"),
+        assets,
+      );
     }
     return { base64: pdf.toString("base64") };
   },
@@ -310,7 +357,10 @@ export const previewDocument = action(
 export const saveBilling = action(
   billingSchema,
   async (values, ctx) => {
-    await db.settings.update({ where: { organizationId: ctx.organizationId }, data: values });
+    await db.settings.update({
+      where: { organizationId: ctx.organizationId },
+      data: values,
+    });
   },
   adminOnly,
 );
@@ -320,11 +370,15 @@ export const saveBilling = action(
 export const saveAccounting = action(
   accountingSchema,
   async (values, ctx) => {
-    const periodicityChanged = values.urssafPeriodicity !== ctx.settings.urssafPeriodicity;
+    const periodicityChanged =
+      values.urssafPeriodicity !== ctx.settings.urssafPeriodicity;
     const todayDate = today();
 
     await db.$transaction(async (tx) => {
-      await tx.settings.update({ where: { organizationId: ctx.organizationId }, data: values });
+      await tx.settings.update({
+        where: { organizationId: ctx.organizationId },
+        data: values,
+      });
       if (periodicityChanged) {
         // Les périodes en cours non déclarées sont recréées au nouveau rythme.
         await tx.urssafDeclaration.deleteMany({
@@ -365,7 +419,10 @@ export const saveContributionRate = action(
         });
       }
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
         throw new AppError("Un taux est déjà défini à cette date d'effet.");
       }
       throw error;
@@ -377,9 +434,45 @@ export const saveContributionRate = action(
 export const deleteContributionRate = action(
   idSchema,
   async ({ id }, ctx) => {
-    await db.contributionRate.deleteMany({ where: { id, organizationId: ctx.organizationId } });
+    await db.contributionRate.deleteMany({
+      where: { id, organizationId: ctx.organizationId },
+    });
   },
   adminOnly,
+);
+
+// ───────────────────────────── Membres ─────────────────────────────
+
+export const addMember = action(
+  memberSchema,
+  async (values, ctx) => {
+    await createMember(ctx.organizationId, values);
+  },
+  ownerOnly,
+);
+
+export const changeMemberRole = action(
+  memberRoleSchema,
+  async ({ id, role }, ctx) => {
+    await updateMemberRole(ctx.organizationId, id, role);
+  },
+  ownerOnly,
+);
+
+export const resetMemberAccess = action(
+  memberPasswordSchema,
+  async ({ id, password }, ctx) => {
+    await resetMemberPassword(ctx.organizationId, id, password);
+  },
+  ownerOnly,
+);
+
+export const deleteMember = action(
+  idSchema,
+  async ({ id }, ctx) => {
+    await removeMember(ctx.organizationId, id);
+  },
+  ownerOnly,
 );
 
 // ───────────────────────────── Compte ─────────────────────────────
@@ -387,28 +480,40 @@ export const deleteContributionRate = action(
 function authErrorMessage(error: unknown, fallback: string): string {
   if (error && typeof error === "object" && "body" in error) {
     const code = (error as { body?: { code?: string } }).body?.code;
-    if (code === "INVALID_PASSWORD") return "Le mot de passe actuel est incorrect.";
-    if (code === "USER_ALREADY_EXISTS" || code === "COULDNT_UPDATE_YOUR_EMAIL") {
+    if (code === "INVALID_PASSWORD")
+      return "Le mot de passe actuel est incorrect.";
+    if (
+      code === "USER_ALREADY_EXISTS" ||
+      code === "COULDNT_UPDATE_YOUR_EMAIL"
+    ) {
       return "Cette adresse e-mail ne peut pas être utilisée.";
     }
   }
   return fallback;
 }
 
-export const updateProfile = action(profileSchema, async ({ name, email }, ctx) => {
-  const requestHeaders = await headers();
-  try {
-    if (name !== ctx.user.name) {
-      await auth.api.updateUser({ body: { name }, headers: requestHeaders });
+export const updateProfile = action(
+  profileSchema,
+  async ({ name, email }, ctx) => {
+    const requestHeaders = await headers();
+    try {
+      if (name !== ctx.user.name) {
+        await auth.api.updateUser({ body: { name }, headers: requestHeaders });
+      }
+      if (email.toLowerCase() !== ctx.user.email.toLowerCase()) {
+        await auth.api.changeEmail({
+          body: { newEmail: email },
+          headers: requestHeaders,
+        });
+      }
+    } catch (error) {
+      console.error(error);
+      throw new AppError(
+        authErrorMessage(error, "Le profil n'a pas pu être mis à jour."),
+      );
     }
-    if (email.toLowerCase() !== ctx.user.email.toLowerCase()) {
-      await auth.api.changeEmail({ body: { newEmail: email }, headers: requestHeaders });
-    }
-  } catch (error) {
-    console.error(error);
-    throw new AppError(authErrorMessage(error, "Le profil n'a pas pu être mis à jour."));
-  }
-});
+  },
+);
 
 export const changePassword = action(
   changePasswordSchema,
@@ -419,13 +524,17 @@ export const changePassword = action(
         headers: await headers(),
       });
     } catch (error) {
-      throw new AppError(authErrorMessage(error, "Le mot de passe n'a pas pu être modifié."));
+      throw new AppError(
+        authErrorMessage(error, "Le mot de passe n'a pas pu être modifié."),
+      );
     }
   },
 );
 
 function avatarFileId(image: string | null): string | null {
-  return image?.startsWith("/api/files/") ? image.slice("/api/files/".length) : null;
+  return image?.startsWith("/api/files/")
+    ? image.slice("/api/files/".length)
+    : null;
 }
 
 export const uploadAvatar = formAction(async (formData, ctx) => {
@@ -433,7 +542,10 @@ export const uploadAvatar = formAction(async (formData, ctx) => {
   if (!file) throw new AppError("Aucun fichier reçu.");
 
   const stored = await storeImage(ctx, file, "AVATAR", "avatar");
-  await db.user.update({ where: { id: ctx.user.id }, data: { image: fileUrl(stored.id) } });
+  await db.user.update({
+    where: { id: ctx.user.id },
+    data: { image: fileUrl(stored.id) },
+  });
 
   const previous = avatarFileId(ctx.user.image);
   if (previous) await removeFile(ctx.organizationId, previous);
