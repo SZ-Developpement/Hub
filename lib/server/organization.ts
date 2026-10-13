@@ -4,7 +4,10 @@ import { generateId } from "better-auth";
 import { hashPassword } from "better-auth/crypto";
 
 import { db } from "@/lib/db";
-import { DEFAULT_EXPENSE_CATEGORIES, DEFAULT_SERVICE_CATEGORIES } from "@/lib/defaults";
+import {
+  DEFAULT_EXPENSE_CATEGORIES,
+  DEFAULT_SERVICE_CATEGORIES,
+} from "@/lib/defaults";
 import { AppError } from "@/lib/errors";
 import { DEFAULT_NUMBERING, DOCUMENT_KINDS } from "@/lib/numbering";
 
@@ -22,10 +25,13 @@ export type OwnerAccountInput = {
 
 /**
  * Première configuration : crée le compte propriétaire, son organisation et les
- * réglages de départ. Refusée dès qu'un compte existe — c'est l'unique porte
- * d'entrée pour créer un compte, l'inscription publique étant désactivée.
+ * réglages de départ. Refusée dès qu'un compte existe : les comptes suivants sont
+ * créés par le propriétaire (voir lib/server/members.ts), l'inscription publique
+ * étant désactivée.
  */
-export async function createOwnerAccount(input: OwnerAccountInput): Promise<void> {
+export async function createOwnerAccount(
+  input: OwnerAccountInput,
+): Promise<void> {
   const email = input.email.trim().toLowerCase();
   const name = `${input.firstName.trim()} ${input.lastName.trim()}`.trim();
   const passwordHash = await hashPassword(input.password);
@@ -49,7 +55,9 @@ export async function createOwnerAccount(input: OwnerAccountInput): Promise<void
       },
     });
 
-    const organization = await tx.organization.create({ data: { name: input.companyName } });
+    const organization = await tx.organization.create({
+      data: { name: input.companyName },
+    });
     await tx.member.create({
       data: { organizationId: organization.id, userId, role: "OWNER" },
     });

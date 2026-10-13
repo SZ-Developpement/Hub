@@ -2,9 +2,12 @@ import { requiredText, z } from "@/lib/validation/zod";
 
 export const MIN_PASSWORD_LENGTH = 10;
 
-const password = z
+export const passwordSchema = z
   .string()
-  .min(MIN_PASSWORD_LENGTH, `Le mot de passe doit contenir au moins ${MIN_PASSWORD_LENGTH} caractères.`)
+  .min(
+    MIN_PASSWORD_LENGTH,
+    `Le mot de passe doit contenir au moins ${MIN_PASSWORD_LENGTH} caractères.`,
+  )
   .max(128);
 
 export const loginSchema = z.object({
@@ -19,7 +22,7 @@ export const setupSchema = z
     lastName: requiredText(80),
     companyName: requiredText(120),
     email: z.email("Adresse e-mail invalide."),
-    password,
+    password: passwordSchema,
     passwordConfirm: z.string(),
     setupToken: z.string().max(200),
   })
@@ -32,7 +35,7 @@ export type SetupValues = z.infer<typeof setupSchema>;
 export const changePasswordSchema = z
   .object({
     currentPassword: z.string().min(1, "Saisissez votre mot de passe actuel."),
-    newPassword: password,
+    newPassword: passwordSchema,
     newPasswordConfirm: z.string(),
     revokeOtherSessions: z.boolean(),
   })
