@@ -3,20 +3,20 @@
 Application interne de gestion commerciale et comptable pour une micro-entreprise :
 pré-devis → devis → factures → encaissements → comptabilité micro-entrepreneur.
 
-Mono-utilisateur aujourd'hui, conçue pour accueillir d'autres membres plus tard
-(toutes les données sont rattachées à une organisation, avec des rôles).
+Pensée pour un indépendant et les quelques personnes qui l'aident : le propriétaire crée leurs
+comptes dans Paramètres › Membres (toutes les données sont rattachées à une organisation, avec des rôles).
 
 ## Stack
 
-| Rôle | Choix |
-|---|---|
-| Framework | Next.js 16 (App Router, Cache Components), TypeScript strict |
-| UI | Tailwind CSS 4, shadcn/ui (Radix), Recharts |
-| Données | Prisma 7 (client généré dans `generated/prisma`), `@prisma/adapter-neon`, Neon |
-| Authentification | Better Auth (e-mail / mot de passe) |
-| Fichiers | Vercel Blob (store privé) |
-| PDF | `@react-pdf/renderer`, côté serveur |
-| Validation | Zod, partagé entre formulaires et Server Actions |
+| Rôle             | Choix                                                                          |
+| ---------------- | ------------------------------------------------------------------------------ |
+| Framework        | Next.js 16 (App Router, Cache Components), TypeScript strict                   |
+| UI               | Tailwind CSS 4, shadcn/ui (Radix), Recharts                                    |
+| Données          | Prisma 7 (client généré dans `generated/prisma`), `@prisma/adapter-neon`, Neon |
+| Authentification | Better Auth (e-mail / mot de passe)                                            |
+| Fichiers         | Vercel Blob (store privé)                                                      |
+| PDF              | `@react-pdf/renderer`, côté serveur                                            |
+| Validation       | Zod, partagé entre formulaires et Server Actions                               |
 
 ## Démarrage
 
@@ -43,7 +43,8 @@ pnpm dev
 ```
 
 Ouvrez http://localhost:3000 : sans compte existant, vous êtes dirigé vers `/setup` pour créer
-le compte propriétaire. C'est la seule façon de créer un compte — l'inscription publique est fermée.
+le compte propriétaire. Les comptes suivants se créent dans **Paramètres › Membres** : l'inscription
+publique est fermée.
 
 ### Données de démonstration (facultatif)
 
@@ -59,18 +60,18 @@ Le seed refuse de tourner sur une base non vide. `pnpm db:seed:reset` **vide la 
 
 ## Variables d'environnement
 
-| Variable | Obligatoire | Rôle |
-|---|---|---|
-| `DATABASE_URL` | oui | URL Neon **poolée**, utilisée par l'application |
-| `DATABASE_URL_UNPOOLED` | recommandé | URL Neon **directe**, utilisée par la CLI Prisma (migrations). À défaut, `DATABASE_URL` est utilisée |
-| `BETTER_AUTH_SECRET` | oui | Secret de signature des sessions (`openssl rand -base64 32`) |
-| `BETTER_AUTH_URL` | oui | URL publique de l'application |
+| Variable                                   | Obligatoire   | Rôle                                                                                                                                                                                                          |
+| ------------------------------------------ | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                             | oui           | URL Neon **poolée**, utilisée par l'application                                                                                                                                                               |
+| `DATABASE_URL_UNPOOLED`                    | recommandé    | URL Neon **directe**, utilisée par la CLI Prisma (migrations). À défaut, `DATABASE_URL` est utilisée                                                                                                          |
+| `BETTER_AUTH_SECRET`                       | oui           | Secret de signature des sessions (`openssl rand -base64 32`)                                                                                                                                                  |
+| `BETTER_AUTH_URL`                          | oui           | URL publique de l'application                                                                                                                                                                                 |
 | `BLOB_READ_WRITE_TOKEN` ou `BLOB_STORE_ID` | en production | Store Vercel Blob : jeton, ou identifiant du store (authentification OIDC). L'un des deux est ajouté par Vercel quand le store est connecté au projet. Absents en local : les fichiers vont dans `./.storage` |
-| `BLOB_ACCESS` | non | `private` (défaut) ou `public`, selon le type du store Blob |
-| `CRON_SECRET` | en production | Protège `/api/cron/daily` |
-| `SETUP_TOKEN` | non | Si défini, `/setup` exige ce code pour créer le compte propriétaire |
-| `SEED_USER_EMAIL`, `SEED_USER_PASSWORD` | pour le seed | Identifiants du compte de démonstration |
-| `NEON_LOCAL_WS_PROXY` | non | Développement sur un Postgres local (voir plus bas) |
+| `BLOB_ACCESS`                              | non           | `private` (défaut) ou `public`, selon le type du store Blob                                                                                                                                                   |
+| `CRON_SECRET`                              | en production | Protège `/api/cron/daily`                                                                                                                                                                                     |
+| `SETUP_TOKEN`                              | non           | Si défini, `/setup` exige ce code pour créer le compte propriétaire                                                                                                                                           |
+| `SEED_USER_EMAIL`, `SEED_USER_PASSWORD`    | pour le seed  | Identifiants du compte de démonstration                                                                                                                                                                       |
+| `NEON_LOCAL_WS_PROXY`                      | non           | Développement sur un Postgres local (voir plus bas)                                                                                                                                                           |
 
 ## Déploiement sur Vercel
 
@@ -89,17 +90,17 @@ chargement de la journée : le cron n'est qu'une garantie supplémentaire.
 
 ## Scripts
 
-| Commande | Effet |
-|---|---|
-| `pnpm dev` / `pnpm build` / `pnpm start` | Développement, build, production |
-| `pnpm typecheck` | Génère les types de routes puis vérifie TypeScript |
-| `pnpm lint` | ESLint |
-| `pnpm db:migrate` | Crée et applique une migration (développement) |
-| `pnpm db:deploy` | Applique les migrations existantes (production) |
-| `pnpm db:studio` | Prisma Studio |
-| `pnpm db:seed` / `pnpm db:seed:reset` | Données de démonstration (le second vide la base) |
-| `pnpm user:reset-password <e-mail>` | Réinitialise un mot de passe (il n'y a pas d'envoi d'e-mail) |
-| `pnpm db:proxy` | Proxy WebSocket pour développer sur un Postgres local |
+| Commande                                 | Effet                                                        |
+| ---------------------------------------- | ------------------------------------------------------------ |
+| `pnpm dev` / `pnpm build` / `pnpm start` | Développement, build, production                             |
+| `pnpm typecheck`                         | Génère les types de routes puis vérifie TypeScript           |
+| `pnpm lint`                              | ESLint                                                       |
+| `pnpm db:migrate`                        | Crée et applique une migration (développement)               |
+| `pnpm db:deploy`                         | Applique les migrations existantes (production)              |
+| `pnpm db:studio`                         | Prisma Studio                                                |
+| `pnpm db:seed` / `pnpm db:seed:reset`    | Données de démonstration (le second vide la base)            |
+| `pnpm user:reset-password <e-mail>`      | Réinitialise un mot de passe (il n'y a pas d'envoi d'e-mail) |
+| `pnpm db:proxy`                          | Proxy WebSocket pour développer sur un Postgres local        |
 
 ### Développer sur un Postgres local (optionnel)
 
@@ -120,7 +121,7 @@ app/
     page.tsx         tableau de bord
     clients/ catalogue/ pre-devis/ devis/ factures/
     comptabilite/    recettes, dépenses, URSSAF, plafonds, exports
-    parametres/      entreprise, apparence, documents, facturation, comptabilité, compte
+    parametres/      entreprise, apparence, documents, facturation, comptabilité, membres, compte
     */actions.ts     Server Actions du module
   api/
     auth/            Better Auth
@@ -177,6 +178,11 @@ contrôlée (clarté, distinction pour les daltoniens) dans `lib/chart-palette.t
 statique et instantanée, les données de l'utilisateur sont diffusées derrière des squelettes. L'identité
 visuelle est mise en cache et invalidée à l'enregistrement des paramètres d'apparence.
 
+**Membres et rôles.** L'application n'envoie pas d'e-mail : le propriétaire crée lui-même le compte
+d'un membre et lui transmet un mot de passe provisoire, que la personne change ensuite. Trois rôles :
+le propriétaire (tout, et seul à gérer les membres), l'administrateur (tout, paramètres compris) et le
+membre (tout sauf modifier les paramètres). Retirer un membre supprime son compte et ferme ses sessions.
+
 **Sécurité.** Chaque page, Server Action et route d'API vérifie la session côté serveur et filtre par
 organisation. Le proxy ne fait qu'un contrôle optimiste du cookie. Les fichiers sont privés et servis
 par l'application. Les uploads d'images sont rastérisés (SVG compris).
@@ -188,4 +194,5 @@ par l'application. Les uploads d'images sont rastérisés (SVG compris).
 - **Envoi d'e-mails** : devis, factures et relances ne sont pas envoyés ; les statuts « envoyé » et les
   relances se consignent à la main.
 - **Factur-X** : l'architecture est prête, l'export n'est pas implémenté.
-- **Gestion des membres** : le modèle de données et les rôles existent, pas l'écran d'invitation.
+- **Droits par module** : un membre voit toute l'activité, comptabilité comprise. Il n'existe pas de
+  droits plus fins que les trois rôles.
